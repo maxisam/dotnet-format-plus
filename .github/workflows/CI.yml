@@ -30,7 +30,6 @@ jobs:
       - run: yarn install
 
       - run: |
-          export NODE_OPTIONS=--openssl-legacy-provider
           yarn all
 
       - name: Compare the expected and actual dist/ directories
