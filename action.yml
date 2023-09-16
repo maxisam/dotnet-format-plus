@@ -1,0 +1,21 @@
+name: 'Your name here'
+description: 'Provide a description here'
+author: 'Your name or organization here'
+branding:
+  icon: send
+  color: purple
+inputs:
+  authToken:
+    description: 'Use your own token if you need to trigger other workflows'
+    required: true  
+  owner:
+    description: 'Repostory owner, defaults to context github.repository_owner if omited'
+    default: ${{ github.repository_owner }}
+    required: false
+  repository:
+    description: 'Repository, default to context github.repository if omited'
+    default: ${{ github.repository }}
+    required: false
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
