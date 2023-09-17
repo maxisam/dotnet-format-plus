@@ -40,11 +40,13 @@ jobs:
           if [ "$(git diff --ignore-space-at-eol dist/ | wc -l)" -gt "0" ]; then
             echo "Detected uncommitted changes after build.  See status below:"
             git diff
-            echo "::set-output name=diff::true"
+            echo "diff=true" >> $GITHUB_ENV
+          else
+            echo "diff=false" >> $GITHUB_ENV
           fi
 
       - name: commit build
-        if: ${{ steps.diff.outputs.diff }}
+        if: ${{ env.diff == 'true' }}
         run: |
           git config --local user.email "maxisam@gmail.com"
           git config --local user.name "maxisam"
