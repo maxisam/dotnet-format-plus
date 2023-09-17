@@ -119,14 +119,15 @@ export function generateReport(reports: string[]): string {
 
 function generateMarkdownReport(documents: ReportItem[], title: string): string {
   let markdown = '<details>\n';
-  markdown += ` < summary ># ${title} Report < /summary>\n\n`;
-
+  markdown += ` <summary> ${title} Report </summary>\n\n`;
+  const cwd = process.cwd();
+  info(`🔍 cwd: ${cwd}`);
   for (const doc of documents) {
-    markdown += `## ${doc.FileName}\n`;
-    markdown += `- Path: ${doc.FilePath}\n`;
+    markdown += `- **${doc.FileName}**\n`;
+    markdown += `  - **Path:** ${toGithubLink(doc.FilePath, cwd)}\n`;
 
     for (const change of doc.FileChanges) {
-      markdown += `  - Description: ${change.FormatDescription}\n`;
+      markdown += `    - **Description:** ${change.FormatDescription}\n`;
     }
 
     markdown += '\n';
@@ -134,4 +135,9 @@ function generateMarkdownReport(documents: ReportItem[], title: string): string 
 
   markdown += '</details>\n';
   return markdown;
+}
+
+function toGithubLink(path: string, cwd: string): string {
+  const main = path.replace(`${cwd}/`, '');
+  return `[${main}](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/${context.sha}/${main})`;
 }

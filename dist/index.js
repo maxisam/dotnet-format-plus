@@ -2399,7 +2399,7 @@ function getReportFiles() {
     return reportPaths.filter(path => fs__WEBPACK_IMPORTED_MODULE_2__.existsSync(path) && fs__WEBPACK_IMPORTED_MODULE_2__.statSync(path).size > 2);
 }
 function generateReport(reports) {
-    let markdownReport = "✅ Formatting succeeded\n\n";
+    let markdownReport = '✅ Formatting succeeded\n\n';
     for (const report of reports) {
         // get file name from report path without extension
         const fileName = report.split('/').pop()?.split('.')[0] || '';
@@ -2409,18 +2409,24 @@ function generateReport(reports) {
     return markdownReport;
 }
 function generateMarkdownReport(documents, title) {
-    let markdown = "<details>\n";
-    markdown += ` < summary ># ${title} Report < /summary>\n\n`;
+    let markdown = '<details>\n';
+    markdown += ` <summary> ${title} Report </summary>\n\n`;
+    const cwd = process.cwd();
+    (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`🔍 cwd: ${cwd}`);
     for (const doc of documents) {
-        markdown += `## ${doc.FileName}\n`;
-        markdown += `- Path: ${doc.FilePath}\n`;
+        markdown += `- **${doc.FileName}**\n`;
+        markdown += `  - **Path:** ${toGithubLink(doc.FilePath, cwd)}\n`;
         for (const change of doc.FileChanges) {
-            markdown += `  - Description: ${change.FormatDescription}\n`;
+            markdown += `    - **Description:** ${change.FormatDescription}\n`;
         }
-        markdown += "\n";
+        markdown += '\n';
     }
-    markdown += "</details>\n";
+    markdown += '</details>\n';
     return markdown;
+}
+function toGithubLink(path, cwd) {
+    const main = path.replace(`${cwd}/`, '');
+    return `[${main}](https://github.com/${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.owner}/${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo}/blob/${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.sha}/${main})`;
 }
 
 
@@ -2685,7 +2691,7 @@ async function run() {
         if (_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.eventName === 'pull_request' && !options.dryRun) {
             await _git__WEBPACK_IMPORTED_MODULE_5__/* .comment */ .UI(githubClient, _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .generateReport */ .OE(reportFiles));
             const isRemoved = await _common__WEBPACK_IMPORTED_MODULE_3__/* .RemoveReportFiles */ .VO();
-            const isInit = isRemoved && await _git__WEBPACK_IMPORTED_MODULE_5__/* .init */ .S1(process.cwd(), inputs.commitUsername, inputs.commitUserEmail);
+            const isInit = isRemoved && (await _git__WEBPACK_IMPORTED_MODULE_5__/* .init */ .S1(process.cwd(), inputs.commitUsername, inputs.commitUserEmail));
             const currentBranch = _common__WEBPACK_IMPORTED_MODULE_3__/* .getCurrentBranch */ .UJ();
             const isCommit = isInit && (await _git__WEBPACK_IMPORTED_MODULE_5__/* .commit */ .th(process.cwd(), inputs.commitMessage, currentBranch));
             if (isCommit) {
