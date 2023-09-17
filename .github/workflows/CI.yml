@@ -6,12 +6,14 @@ on:
     paths-ignore:
       - '**.md'
       - dist/**
+      - __tests__/dotnet/**
   push:
     branches:
       - main
     paths-ignore:
       - '**.md'
       - dist/**
+      - __tests__/dotnet/**
 jobs:
   build:
     name: Build
