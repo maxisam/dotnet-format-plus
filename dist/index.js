@@ -2562,8 +2562,12 @@ async function handleRejectedPush(branch) {
 // add report to github action artifacts
 async function UploadReportToArtifacts() {
     const artifactClient = artifact_client/* create */.U();
-    const reportPaths = [`${common/* REPORT_PATH */.kG}dotnet-format.json`, `${common/* REPORT_PATH */.kG}style-format.json`, `${common/* REPORT_PATH */.kG}analyzers-format.json`, `${common/* REPORT_PATH */.kG}whitespace-format.json`];
-    // check if reportPaths exist through nodejs fs
+    const reportPaths = [
+        `${common/* REPORT_PATH */.kG}dotnet-format.json`,
+        `${common/* REPORT_PATH */.kG}style-format.json`,
+        `${common/* REPORT_PATH */.kG}analyzers-format.json`,
+        `${common/* REPORT_PATH */.kG}whitespace-format.json`
+    ];
     const reportExist = reportPaths.filter(path => external_fs_.existsSync(path));
     const artifactName = 'dotnet-format-report';
     const uploadResponse = await artifactClient.uploadArtifact(artifactName, reportExist, process.cwd(), {
