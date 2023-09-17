@@ -8,7 +8,9 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 
 // EXPORTS
 __nccwpck_require__.d(__webpack_exports__, {
+  "GB": () => (/* binding */ REPORT_ARTIFACT_NAME),
   "kG": () => (/* binding */ REPORT_PATH),
+  "VO": () => (/* binding */ RemoveReportFiles),
   "UJ": () => (/* binding */ getCurrentBranch),
   "oE": () => (/* binding */ getFormatOptions),
   "G9": () => (/* binding */ getInputs),
@@ -2168,6 +2170,8 @@ function fixResponseChunkedTransferBadEnding(request, errorCallback) {
 
 // EXTERNAL MODULE: external "util"
 var external_util_ = __nccwpck_require__(3837);
+// EXTERNAL MODULE: ./lib/execute.js
+var execute = __nccwpck_require__(3532);
 ;// CONCATENATED MODULE: ./lib/modals.js
 var INPUTS;
 (function (INPUTS) {
@@ -2196,7 +2200,9 @@ var INPUTS;
 
 
 
+
 const REPORT_PATH = `${process.cwd()}/.dotnet-format/`;
+const REPORT_ARTIFACT_NAME = 'dotnet-format-report';
 function getInputs() {
     const inputs = {
         authToken: core.getInput(INPUTS.authToken),
@@ -2273,6 +2279,10 @@ function getCurrentBranch() {
     core.info(`Current branch: ${current}`);
     return current;
 }
+async function RemoveReportFiles() {
+    const { result } = await (0,execute/* execute */.h)(`rm -rf ${REPORT_PATH}`);
+    return result;
+}
 
 
 /***/ }),
@@ -2282,15 +2292,20 @@ function getCurrentBranch() {
 
 "use strict";
 /* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
-/* harmony export */   "I": () => (/* binding */ execFormat),
-/* harmony export */   "b": () => (/* binding */ buildFormatCommandArgs)
+/* harmony export */   "Iu": () => (/* binding */ execFormat),
+/* harmony export */   "OE": () => (/* binding */ generateReport),
+/* harmony export */   "bs": () => (/* binding */ buildFormatCommandArgs),
+/* harmony export */   "xd": () => (/* binding */ getReportFiles)
 /* harmony export */ });
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(2186);
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _actions_github__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(5438);
 /* harmony import */ var _actions_github__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(_actions_github__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var _common__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(1887);
-/* harmony import */ var _execute__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(3532);
+/* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(7147);
+/* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__nccwpck_require__.n(fs__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _common__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(1887);
+/* harmony import */ var _execute__WEBPACK_IMPORTED_MODULE_4__ = __nccwpck_require__(3532);
+
 
 
 
@@ -2307,6 +2322,12 @@ function formatOnlyChangedFiles(onlyChangedFiles) {
 }
 function buildFormatCommandArgsVariants(options) {
     const dotnetFormatOptions = [];
+    if (!options.skipFixWhitespace &&
+        !options.skipFixAnalyzers &&
+        !options.skipFixStyle &&
+        options.styleSeverityLevel === options.analyzersSeverityLevel) {
+        return [['format']];
+    }
     if (!options.skipFixWhitespace) {
         dotnetFormatOptions.push(['format', 'whitespace']);
     }
@@ -2316,7 +2337,13 @@ function buildFormatCommandArgsVariants(options) {
     if (!options.skipFixStyle) {
         dotnetFormatOptions.push(['format', 'style', '--severity', options.styleSeverityLevel]);
     }
-    return dotnetFormatOptions.length ? dotnetFormatOptions : [['format']];
+    if (dotnetFormatOptions.length) {
+        return dotnetFormatOptions;
+    }
+    else {
+        (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.warning)('All fix options are disabled. Falling back to default format command');
+        return [['format']];
+    }
 }
 async function buildFormatCommandArgs(options, getFilesToCheck) {
     const dotnetFormatOptions = [];
@@ -2343,23 +2370,57 @@ async function buildFormatCommandArgs(options, getFilesToCheck) {
     const dotnetFormatOptionsGroups = buildFormatCommandArgsVariants(options);
     return dotnetFormatOptionsGroups.map(option => {
         if (option.length === 1) {
-            return [...option, ...dotnetFormatOptions, '--report', `${_common__WEBPACK_IMPORTED_MODULE_2__/* .REPORT_PATH */ .kG}/dotnet-format.json`];
+            return [...option, ...dotnetFormatOptions, '--report', `${_common__WEBPACK_IMPORTED_MODULE_3__/* .REPORT_PATH */ .kG}/dotnet-format.json`];
         }
         else {
-            return [...option, ...dotnetFormatOptions, '--report', `${_common__WEBPACK_IMPORTED_MODULE_2__/* .REPORT_PATH */ .kG}/${option[1]}-format.json`];
+            return [...option, ...dotnetFormatOptions, '--report', `${_common__WEBPACK_IMPORTED_MODULE_3__/* .REPORT_PATH */ .kG}/${option[1]}-format.json`];
         }
     });
 }
 async function execFormat(formatArgs) {
     process.env.DOTNET_CLI_TELEMETRY_OPTOUT = 'true';
     process.env.DOTNET_NOLOGO = 'true';
-    const { stdout, stderr } = await (0,_execute__WEBPACK_IMPORTED_MODULE_3__/* .execute */ .h)('dotnet', process.cwd(), formatArgs, false, true);
+    const { stdout, stderr } = await (0,_execute__WEBPACK_IMPORTED_MODULE_4__/* .execute */ .h)('dotnet', process.cwd(), formatArgs, false, true);
     // dotnet format returns non-zero exit code if there are formatting issues
     // but we don't want to fail the action in this case
     // stdout will always end with Format complete ...
     // stderr will be empty if there are no formatting issues
     const result = stdout[stdout.length - 1].includes('Format complete');
     return { stdout, stderr, formatResult: result };
+}
+function getReportFiles() {
+    const reportPaths = [
+        `${_common__WEBPACK_IMPORTED_MODULE_3__/* .REPORT_PATH */ .kG}dotnet-format.json`,
+        `${_common__WEBPACK_IMPORTED_MODULE_3__/* .REPORT_PATH */ .kG}style-format.json`,
+        `${_common__WEBPACK_IMPORTED_MODULE_3__/* .REPORT_PATH */ .kG}analyzers-format.json`,
+        `${_common__WEBPACK_IMPORTED_MODULE_3__/* .REPORT_PATH */ .kG}whitespace-format.json`
+    ];
+    // check if file size is greater than 2 bytes to avoid empty report
+    return reportPaths.filter(path => fs__WEBPACK_IMPORTED_MODULE_2__.existsSync(path) && fs__WEBPACK_IMPORTED_MODULE_2__.statSync(path).size > 2);
+}
+function generateReport(reports) {
+    let markdownReport = "✅ Formatting succeeded\n\n";
+    for (const report of reports) {
+        // get file name from report path without extension
+        const fileName = report.split('/').pop()?.split('.')[0] || '';
+        const reportJson = JSON.parse(fs__WEBPACK_IMPORTED_MODULE_2__.readFileSync(report, 'utf8'));
+        markdownReport += generateMarkdownReport(reportJson, fileName.toLocaleUpperCase());
+    }
+    return markdownReport;
+}
+function generateMarkdownReport(documents, title) {
+    let markdown = "<details>\n";
+    markdown += ` < summary ># ${title} Report < /summary>\n\n`;
+    for (const doc of documents) {
+        markdown += `## ${doc.FileName}\n`;
+        markdown += `- Path: ${doc.FilePath}\n`;
+        for (const change of doc.FileChanges) {
+            markdown += `  - Description: ${change.FormatDescription}\n`;
+        }
+        markdown += "\n";
+    }
+    markdown += "</details>\n";
+    return markdown;
 }
 
 
@@ -2425,17 +2486,11 @@ var core = __nccwpck_require__(2186);
 var github = __nccwpck_require__(5438);
 ;// CONCATENATED MODULE: external "console"
 const external_console_namespaceObject = require("console");
-// EXTERNAL MODULE: external "fs"
-var external_fs_ = __nccwpck_require__(7147);
 // EXTERNAL MODULE: external "path"
 var external_path_ = __nccwpck_require__(1017);
-// EXTERNAL MODULE: ./lib/common.js + 22 modules
-var common = __nccwpck_require__(1887);
 // EXTERNAL MODULE: ./lib/execute.js
 var execute = __nccwpck_require__(3532);
 ;// CONCATENATED MODULE: ./lib/git.js
-
-
 
 
 
@@ -2560,17 +2615,9 @@ async function handleRejectedPush(branch) {
     }
 }
 // add report to github action artifacts
-async function UploadReportToArtifacts() {
+async function UploadReportToArtifacts(reports, artifactName) {
     const artifactClient = artifact_client/* create */.U();
-    const reportPaths = [
-        `${common/* REPORT_PATH */.kG}dotnet-format.json`,
-        `${common/* REPORT_PATH */.kG}style-format.json`,
-        `${common/* REPORT_PATH */.kG}analyzers-format.json`,
-        `${common/* REPORT_PATH */.kG}whitespace-format.json`
-    ];
-    const reportExist = reportPaths.filter(path => external_fs_.existsSync(path));
-    const artifactName = 'dotnet-format-report';
-    const uploadResponse = await artifactClient.uploadArtifact(artifactName, reportExist, process.cwd(), {
+    const uploadResponse = await artifactClient.uploadArtifact(artifactName, reports, process.cwd(), {
         continueOnError: true
     });
     if (uploadResponse.failedItems.length > 0) {
@@ -2578,9 +2625,7 @@ async function UploadReportToArtifacts() {
     }
     else {
         (0,core.info)(`Artifact ${artifactName} uploaded successfully`);
-        // remove report from local
     }
-    await (0,execute/* execute */.h)(`rm -rf ${common/* REPORT_PATH */.kG}`);
 }
 
 
@@ -2608,6 +2653,7 @@ __nccwpck_require__.r(__webpack_exports__);
 
 
 
+
 async function setOutput(isDryRun) {
     if (isDryRun) {
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('has-changes', 'false');
@@ -2618,46 +2664,28 @@ async function setOutput(isDryRun) {
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('has-changes', isFileChanged.toString());
     }
 }
-async function comment(githubClient, stderr, stdout, formatResult) {
-    if (_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.eventName === 'pull_request') {
-        if (formatResult) {
-            if (stderr.length) {
-                // even if the formatting succeeded, we still want to comment on the PR and let the user know that there were fixed
-                await _git__WEBPACK_IMPORTED_MODULE_5__/* .comment */ .UI(githubClient, `✅✅ Formatting succeeded  \n ${stderr.join('')}`);
-            }
-            else {
-                const totalFixedIssues = stdout.length - 2;
-                if (totalFixedIssues > 0) {
-                    const output = `${stdout[0]} \n Total fixed issues: ${stdout.length - 2} \n\n ${stdout[stdout.length - 1]} `;
-                    await _git__WEBPACK_IMPORTED_MODULE_5__/* .comment */ .UI(githubClient, `✅ Formatting succeeded \n\n ${output}`);
-                }
-            }
-        }
-        else {
-            await _git__WEBPACK_IMPORTED_MODULE_5__/* .comment */ .UI(githubClient, `❌ Formatting failed \n ${stderr.join('')}`);
-        }
-    }
-}
 async function run() {
     try {
         const inputs = _common__WEBPACK_IMPORTED_MODULE_3__/* .getInputs */ .G9();
         (0,util__WEBPACK_IMPORTED_MODULE_2__.inspect)(inputs);
         const githubClient = _common__WEBPACK_IMPORTED_MODULE_3__/* .getOctokitRest */ .IT(inputs.authToken);
         const options = _common__WEBPACK_IMPORTED_MODULE_3__/* .getFormatOptions */ .oE(inputs);
-        const formatArgs = await _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .buildFormatCommandArgs */ .b(options, async () => {
+        const formatArgs = await _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .buildFormatCommandArgs */ .bs(options, async () => {
             return await _git__WEBPACK_IMPORTED_MODULE_5__/* .getPullRequestFiles */ .p0(githubClient);
         });
         let finalFormatResult = false;
         for (const args of formatArgs) {
-            const { stdout, stderr, formatResult } = await _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .execFormat */ .I(args);
+            const { formatResult } = await _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .execFormat */ .Iu(args);
             (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`✅✅✅✅✅ DOTNET FORMAT SUCCESS: ${formatResult} ✅✅✅✅✅`);
-            await comment(githubClient, stderr, stdout, formatResult);
             finalFormatResult = finalFormatResult || formatResult;
         }
-        await _git__WEBPACK_IMPORTED_MODULE_5__/* .UploadReportToArtifacts */ .BC();
+        const reportFiles = _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .getReportFiles */ .xd();
+        await _git__WEBPACK_IMPORTED_MODULE_5__/* .UploadReportToArtifacts */ .BC(reportFiles, _common__WEBPACK_IMPORTED_MODULE_3__/* .REPORT_ARTIFACT_NAME */ .GB);
         await setOutput(options.dryRun);
         if (_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.eventName === 'pull_request' && !options.dryRun) {
-            const isInit = await _git__WEBPACK_IMPORTED_MODULE_5__/* .init */ .S1(process.cwd(), inputs.commitUsername, inputs.commitUserEmail);
+            await _git__WEBPACK_IMPORTED_MODULE_5__/* .comment */ .UI(githubClient, _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .generateReport */ .OE(reportFiles));
+            const isRemoved = await _common__WEBPACK_IMPORTED_MODULE_3__/* .RemoveReportFiles */ .VO();
+            const isInit = isRemoved && await _git__WEBPACK_IMPORTED_MODULE_5__/* .init */ .S1(process.cwd(), inputs.commitUsername, inputs.commitUserEmail);
             const currentBranch = _common__WEBPACK_IMPORTED_MODULE_3__/* .getCurrentBranch */ .UJ();
             const isCommit = isInit && (await _git__WEBPACK_IMPORTED_MODULE_5__/* .commit */ .th(process.cwd(), inputs.commitMessage, currentBranch));
             if (isCommit) {

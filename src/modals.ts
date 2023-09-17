@@ -57,3 +57,22 @@ export type FormatResult = {
   stderr: string[];
   formatResult: boolean;
 };
+
+export interface FileChange {
+  LineNumber: number;
+  CharNumber: number;
+  DiagnosticId: string;
+  FormatDescription: string;
+}
+
+export interface ReportItem {
+  DocumentId: {
+    ProjectId: {
+      Id: string;
+    };
+    Id: string;
+  };
+  FileName: string;
+  FilePath: string;
+  FileChanges: FileChange[];
+}

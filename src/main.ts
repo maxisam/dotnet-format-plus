@@ -1,9 +1,9 @@
 import * as core from '@actions/core';
 import { info } from '@actions/core';
 import { context } from '@actions/github';
-import { Octokit } from '@octokit/rest';
 import { inspect } from 'util';
 import * as Common from './common';
+import { REPORT_ARTIFACT_NAME } from './common';
 import * as dotnet from './dotnet';
 import * as git from './git';
 
@@ -14,25 +14,6 @@ async function setOutput(isDryRun: boolean): Promise<void> {
     const isFileChanged = await git.checkIsFileChanged();
     info(`isFileChanged: ${isFileChanged}`);
     core.setOutput('has-changes', isFileChanged.toString());
-  }
-}
-
-async function comment(githubClient: InstanceType<typeof Octokit>, stderr: string[], stdout: string[], formatResult: boolean): Promise<void> {
-  if (context.eventName === 'pull_request') {
-    if (formatResult) {
-      if (stderr.length) {
-        // even if the formatting succeeded, we still want to comment on the PR and let the user know that there were fixed
-        await git.comment(githubClient, `✅✅ Formatting succeeded  \n ${stderr.join('')}`);
-      } else {
-        const totalFixedIssues = stdout.length - 2;
-        if (totalFixedIssues > 0) {
-          const output = `${stdout[0]} \n Total fixed issues: ${stdout.length - 2} \n\n ${stdout[stdout.length - 1]} `;
-          await git.comment(githubClient, `✅ Formatting succeeded \n\n ${output}`);
-        }
-      }
-    } else {
-      await git.comment(githubClient, `❌ Formatting failed \n ${stderr.join('')}`);
-    }
   }
 }
 
@@ -47,15 +28,17 @@ async function run(): Promise<boolean> {
     });
     let finalFormatResult = false;
     for (const args of formatArgs) {
-      const { stdout, stderr, formatResult } = await dotnet.execFormat(args);
+      const { formatResult } = await dotnet.execFormat(args);
       info(`✅✅✅✅✅ DOTNET FORMAT SUCCESS: ${formatResult} ✅✅✅✅✅`);
-      await comment(githubClient, stderr, stdout, formatResult);
       finalFormatResult = finalFormatResult || formatResult;
     }
-    await git.UploadReportToArtifacts();
+    const reportFiles = dotnet.getReportFiles();
+    await git.UploadReportToArtifacts(reportFiles, REPORT_ARTIFACT_NAME);
     await setOutput(options.dryRun);
     if (context.eventName === 'pull_request' && !options.dryRun) {
-      const isInit = await git.init(process.cwd(), inputs.commitUsername, inputs.commitUserEmail);
+      await git.comment(githubClient, dotnet.generateReport(reportFiles));
+      const isRemoved = await Common.RemoveReportFiles();
+      const isInit = isRemoved && (await git.init(process.cwd(), inputs.commitUsername, inputs.commitUserEmail));
       const currentBranch = Common.getCurrentBranch();
       const isCommit = isInit && (await git.commit(process.cwd(), inputs.commitMessage, currentBranch));
       if (isCommit) {

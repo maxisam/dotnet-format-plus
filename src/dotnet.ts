@@ -1,9 +1,10 @@
 import { debug, info, setFailed, warning } from '@actions/core';
 import { context } from '@actions/github';
 
+import * as fs from 'fs';
 import { REPORT_PATH } from './common';
 import { execute } from './execute';
-import { FormatOptions, FormatResult } from './modals';
+import { FormatOptions, FormatResult, ReportItem } from './modals';
 
 function formatOnlyChangedFiles(onlyChangedFiles: boolean): boolean {
   if (onlyChangedFiles) {
@@ -18,6 +19,14 @@ function formatOnlyChangedFiles(onlyChangedFiles: boolean): boolean {
 
 function buildFormatCommandArgsVariants(options: FormatOptions): string[][] {
   const dotnetFormatOptions: string[][] = [];
+  if (
+    !options.skipFixWhitespace &&
+    !options.skipFixAnalyzers &&
+    !options.skipFixStyle &&
+    options.styleSeverityLevel === options.analyzersSeverityLevel
+  ) {
+    return [['format']];
+  }
   if (!options.skipFixWhitespace) {
     dotnetFormatOptions.push(['format', 'whitespace']);
   }
@@ -27,7 +36,12 @@ function buildFormatCommandArgsVariants(options: FormatOptions): string[][] {
   if (!options.skipFixStyle) {
     dotnetFormatOptions.push(['format', 'style', '--severity', options.styleSeverityLevel]);
   }
-  return dotnetFormatOptions.length ? dotnetFormatOptions : [['format']];
+  if (dotnetFormatOptions.length) {
+    return dotnetFormatOptions;
+  } else {
+    warning('All fix options are disabled. Falling back to default format command');
+    return [['format']];
+  }
 }
 
 export async function buildFormatCommandArgs(options: FormatOptions, getFilesToCheck: () => Promise<string[]>): Promise<string[][]> {
@@ -79,4 +93,45 @@ export async function execFormat(formatArgs: string[]): Promise<FormatResult> {
 
   const result = stdout[stdout.length - 1].includes('Format complete');
   return { stdout, stderr, formatResult: result };
+}
+
+export function getReportFiles(): string[] {
+  const reportPaths = [
+    `${REPORT_PATH}dotnet-format.json`,
+    `${REPORT_PATH}style-format.json`,
+    `${REPORT_PATH}analyzers-format.json`,
+    `${REPORT_PATH}whitespace-format.json`
+  ];
+  // check if file size is greater than 2 bytes to avoid empty report
+  return reportPaths.filter(path => fs.existsSync(path) && fs.statSync(path).size > 2);
+}
+
+export function generateReport(reports: string[]): string {
+  let markdownReport = '✅ Formatting succeeded\n\n';
+  for (const report of reports) {
+    // get file name from report path without extension
+    const fileName = report.split('/').pop()?.split('.')[0] || '';
+    const reportJson = JSON.parse(fs.readFileSync(report, 'utf8')) as ReportItem[];
+    markdownReport += generateMarkdownReport(reportJson, fileName.toLocaleUpperCase());
+  }
+  return markdownReport;
+}
+
+function generateMarkdownReport(documents: ReportItem[], title: string): string {
+  let markdown = '<details>\n';
+  markdown += ` < summary ># ${title} Report < /summary>\n\n`;
+
+  for (const doc of documents) {
+    markdown += `## ${doc.FileName}\n`;
+    markdown += `- Path: ${doc.FilePath}\n`;
+
+    for (const change of doc.FileChanges) {
+      markdown += `  - Description: ${change.FormatDescription}\n`;
+    }
+
+    markdown += '\n';
+  }
+
+  markdown += '</details>\n';
+  return markdown;
 }
