@@ -1,9 +1,11 @@
 import * as core from '@actions/core';
-import {context} from '@actions/github';
-import {Octokit} from '@octokit/rest';
+import { context } from '@actions/github';
+import { Octokit } from '@octokit/rest';
 import fetch from 'node-fetch';
-import {inspect} from 'util';
-import {FixLevelType, FormatOptions, IInputs, INPUTS} from './modals';
+import { inspect } from 'util';
+import { FixLevelType, FormatOptions, IInputs, INPUTS } from './modals';
+
+export const REPORT_PATH = `${process.cwd()}/.dotnet-format`;
 
 export function getInputs(): IInputs {
   const inputs: IInputs = {

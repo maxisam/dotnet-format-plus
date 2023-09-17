@@ -1,8 +1,8 @@
 import * as core from '@actions/core';
-import {info} from '@actions/core';
-import {context} from '@actions/github';
-import {Octokit} from '@octokit/rest';
-import {inspect} from 'util';
+import { info } from '@actions/core';
+import { context } from '@actions/github';
+import { Octokit } from '@octokit/rest';
+import { inspect } from 'util';
 import * as Common from './common';
 import * as dotnet from './dotnet';
 import * as git from './git';
@@ -46,12 +46,13 @@ async function run(): Promise<boolean> {
       return await git.getPullRequestFiles(githubClient);
     });
     let finalFormatResult = false;
-    for await (const args of formatArgs) {
-      const {stdout, stderr, formatResult} = await dotnet.execFormat(args);
+    for (const args of formatArgs) {
+      const { stdout, stderr, formatResult } = await dotnet.execFormat(args);
       info(`✅✅✅✅✅ DOTNET FORMAT SUCCESS: ${formatResult} ✅✅✅✅✅`);
       await comment(githubClient, stderr, stdout, formatResult);
       finalFormatResult = finalFormatResult || formatResult;
     }
+    await git.UploadReportToArtifacts();
     await setOutput(options.dryRun);
     if (context.eventName === 'pull_request' && !options.dryRun) {
       const isInit = await git.init(process.cwd(), inputs.commitUsername, inputs.commitUserEmail);

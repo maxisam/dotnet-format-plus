@@ -1,4 +1,4 @@
-import {exec} from '@actions/exec';
+import { exec } from '@actions/exec';
 
 type ExecuteOutput = {
   stdout: string[];
@@ -33,5 +33,5 @@ export async function execute(
     ignoreReturnCode
   });
 
-  return {stdout, stderr, result: exitCode === 0};
+  return { stdout, stderr, result: exitCode === 0 };
 }

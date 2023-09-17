@@ -1,8 +1,9 @@
-import {debug, info, setFailed, warning} from '@actions/core';
-import {context} from '@actions/github';
+import { debug, info, setFailed, warning } from '@actions/core';
+import { context } from '@actions/github';
 
-import {execute} from './execute';
-import {FormatOptions, FormatResult} from './modals';
+import { REPORT_PATH } from './common';
+import { execute } from './execute';
+import { FormatOptions, FormatResult } from './modals';
 
 function formatOnlyChangedFiles(onlyChangedFiles: boolean): boolean {
   if (onlyChangedFiles) {
@@ -58,18 +59,24 @@ export async function buildFormatCommandArgs(options: FormatOptions, getFilesToC
   !!options.exclude && dotnetFormatOptions.push('--exclude', options.exclude);
   dotnetFormatOptions.push('--verbosity', options.logLevel);
   const dotnetFormatOptionsGroups = buildFormatCommandArgsVariants(options);
-  return dotnetFormatOptionsGroups.map(option => [...option, ...dotnetFormatOptions]);
+  return dotnetFormatOptionsGroups.map(option => {
+    if (option.length === 1) {
+      return [...option, ...dotnetFormatOptions, '--report', `${REPORT_PATH}/dotnet-format.json`];
+    } else {
+      return [...option, ...dotnetFormatOptions, '--report', `${REPORT_PATH}/${option[1]}-format.json`];
+    }
+  });
 }
 
 export async function execFormat(formatArgs: string[]): Promise<FormatResult> {
   process.env.DOTNET_CLI_TELEMETRY_OPTOUT = 'true';
   process.env.DOTNET_NOLOGO = 'true';
-  const {stdout, stderr} = await execute('dotnet', process.cwd(), formatArgs, false, true);
+  const { stdout, stderr } = await execute('dotnet', process.cwd(), formatArgs, false, true);
   // dotnet format returns non-zero exit code if there are formatting issues
   // but we don't want to fail the action in this case
   // stdout will always end with Format complete ...
   // stderr will be empty if there are no formatting issues
 
   const result = stdout[stdout.length - 1].includes('Format complete');
-  return {stdout, stderr, formatResult: result};
+  return { stdout, stderr, formatResult: result };
 }

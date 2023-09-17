@@ -1,5 +1,5 @@
-import {describe, expect, it} from '@jest/globals';
-import {execute} from '../src/execute';
+import { describe, expect, it } from '@jest/globals';
+import { execute } from '../src/execute';
 
 describe('execute', () => {
   it('should execute a command successfully', async () => {

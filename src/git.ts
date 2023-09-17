@@ -1,9 +1,11 @@
-import {error, info} from '@actions/core';
-import {context} from '@actions/github';
-import {Octokit} from '@octokit/rest';
-import {debug} from 'console';
-import {extname} from 'path';
-import {execute} from './execute';
+import * as artifact from '@actions/artifact';
+import { error, info } from '@actions/core';
+import { context } from '@actions/github';
+import { Octokit } from '@octokit/rest';
+import { debug } from 'console';
+import { extname } from 'path';
+import { REPORT_PATH } from './common';
+import { execute } from './execute';
 
 const enum FileStatus {
   /**
@@ -52,7 +54,7 @@ export async function getPullRequestFiles(githubClient: InstanceType<typeof Octo
 
 export async function checkIsFileChanged(): Promise<boolean> {
   debug('Checking changed files');
-  const {stdout, stderr} = await execute('git', process.cwd(), ['status', '-s'], false, false);
+  const { stdout, stderr } = await execute('git', process.cwd(), ['status', '-s'], false, false);
   await execute('git', process.cwd(), ['status', '-s'], false, false);
 
   if (stderr.join('') !== '') {
@@ -68,7 +70,7 @@ export async function checkIsFileChanged(): Promise<boolean> {
 }
 
 export async function comment(githubClient: InstanceType<typeof Octokit>, message: string): Promise<boolean> {
-  const {owner, repo, number} = context.issue;
+  const { owner, repo, number } = context.issue;
   if (!number) {
     throw new Error('Unable to get pull request number from action event');
   }
@@ -105,7 +107,7 @@ export async function init(workspace: string, username: string, email: string): 
 
 export async function commit(workspace: string, message: string, branch: string): Promise<boolean> {
   // check what is the current branch
-  const {stdout} = await execute(`git branch --show-current`);
+  const { stdout } = await execute(`git branch --show-current`);
   if (stdout.join('').trim() !== branch) {
     info(`Checking out ${branch}…`);
     await execute(`git fetch origin ${branch} --depth=1`);
@@ -160,4 +162,22 @@ async function handleRejectedPush(branch: string): Promise<void> {
   } else {
     throw new Error(`Rebase failed`);
   }
+}
+// add report to github action artifacts
+export async function UploadReportToArtifacts(): Promise<void> {
+  const artifactClient = artifact.create();
+  const reportPath = REPORT_PATH;
+  const artifactName = 'dotnet-format-report';
+
+  const uploadResponse = await artifactClient.uploadArtifact(artifactName, [reportPath], process.cwd(), {
+    continueOnError: true
+  });
+
+  if (uploadResponse.failedItems.length > 0) {
+    error(`Failed to upload artifact ${artifactName}: ${uploadResponse.failedItems.join(', ')}`);
+  } else {
+    info(`Artifact ${artifactName} uploaded successfully`);
+    // remove report from local
+  }
+  await execute(`rm -rf ${reportPath}`);
 }
