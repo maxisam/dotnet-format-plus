@@ -2,7 +2,7 @@
   "name": "dotnet-format-plus",
   "version": "0.0.0",
   "private": true,
-  "description": "yet another github action",
+  "description": "yet another dotnet-format action",
   "main": "lib/main.js",
   "scripts": {
     "build": "tsc",

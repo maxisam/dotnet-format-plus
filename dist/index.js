@@ -2196,7 +2196,7 @@ var INPUTS;
 
 
 
-const REPORT_PATH = `${process.cwd()}/.dotnet-format`;
+const REPORT_PATH = `${process.cwd()}/.dotnet-format/`;
 function getInputs() {
     const inputs = {
         authToken: core.getInput(INPUTS.authToken),
@@ -2425,6 +2425,8 @@ var core = __nccwpck_require__(2186);
 var github = __nccwpck_require__(5438);
 ;// CONCATENATED MODULE: external "console"
 const external_console_namespaceObject = require("console");
+// EXTERNAL MODULE: external "fs"
+var external_fs_ = __nccwpck_require__(7147);
 // EXTERNAL MODULE: external "path"
 var external_path_ = __nccwpck_require__(1017);
 // EXTERNAL MODULE: ./lib/common.js + 22 modules
@@ -2432,6 +2434,7 @@ var common = __nccwpck_require__(1887);
 // EXTERNAL MODULE: ./lib/execute.js
 var execute = __nccwpck_require__(3532);
 ;// CONCATENATED MODULE: ./lib/git.js
+
 
 
 
@@ -2559,9 +2562,11 @@ async function handleRejectedPush(branch) {
 // add report to github action artifacts
 async function UploadReportToArtifacts() {
     const artifactClient = artifact_client/* create */.U();
-    const reportPath = common/* REPORT_PATH */.kG;
+    const reportPaths = [`${common/* REPORT_PATH */.kG}dotnet-format.json`, `${common/* REPORT_PATH */.kG}style-format.json`, `${common/* REPORT_PATH */.kG}analyzers-format.json`, `${common/* REPORT_PATH */.kG}whitespace-format.json`];
+    // check if reportPaths exist through nodejs fs
+    const reportExist = reportPaths.filter(path => external_fs_.existsSync(path));
     const artifactName = 'dotnet-format-report';
-    const uploadResponse = await artifactClient.uploadArtifact(artifactName, [reportPath], process.cwd(), {
+    const uploadResponse = await artifactClient.uploadArtifact(artifactName, reportExist, process.cwd(), {
         continueOnError: true
     });
     if (uploadResponse.failedItems.length > 0) {
@@ -2571,7 +2576,7 @@ async function UploadReportToArtifacts() {
         (0,core.info)(`Artifact ${artifactName} uploaded successfully`);
         // remove report from local
     }
-    await (0,execute/* execute */.h)(`rm -rf ${reportPath}`);
+    await (0,execute/* execute */.h)(`rm -rf ${common/* REPORT_PATH */.kG}`);
 }
 
 

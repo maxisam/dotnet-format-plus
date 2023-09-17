@@ -3,6 +3,7 @@ import { error, info } from '@actions/core';
 import { context } from '@actions/github';
 import { Octokit } from '@octokit/rest';
 import { debug } from 'console';
+import * as fs from 'fs';
 import { extname } from 'path';
 import { REPORT_PATH } from './common';
 import { execute } from './execute';
@@ -166,10 +167,16 @@ async function handleRejectedPush(branch: string): Promise<void> {
 // add report to github action artifacts
 export async function UploadReportToArtifacts(): Promise<void> {
   const artifactClient = artifact.create();
-  const reportPath = REPORT_PATH;
+  const reportPaths = [
+    `${REPORT_PATH}dotnet-format.json`,
+    `${REPORT_PATH}style-format.json`,
+    `${REPORT_PATH}analyzers-format.json`,
+    `${REPORT_PATH}whitespace-format.json`
+  ];
+  const reportExist = reportPaths.filter(path => fs.existsSync(path));
   const artifactName = 'dotnet-format-report';
 
-  const uploadResponse = await artifactClient.uploadArtifact(artifactName, [reportPath], process.cwd(), {
+  const uploadResponse = await artifactClient.uploadArtifact(artifactName, reportExist, process.cwd(), {
     continueOnError: true
   });
 
@@ -179,5 +186,5 @@ export async function UploadReportToArtifacts(): Promise<void> {
     info(`Artifact ${artifactName} uploaded successfully`);
     // remove report from local
   }
-  await execute(`rm -rf ${reportPath}`);
+  await execute(`rm -rf ${REPORT_PATH}`);
 }

@@ -18,7 +18,7 @@ jobs:
         id: dotnet-format
         uses: maxisam/dotnet-format-plus@main
         with:
-          authToken: ${{ secrets.BOT_WORKFLOW_TOKEN }}
+          authToken: ${{ secrets.GITHUB_TOKEN }}
           workspace: ${{ github.workspace }}/__tests__/dotnet/Console/Console.sln
       - name: log-output
         run: echo "${{ steps.dotnet-format.outputs.output }}"

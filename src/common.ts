@@ -5,7 +5,7 @@ import fetch from 'node-fetch';
 import { inspect } from 'util';
 import { FixLevelType, FormatOptions, IInputs, INPUTS } from './modals';
 
-export const REPORT_PATH = `${process.cwd()}/.dotnet-format`;
+export const REPORT_PATH = `${process.cwd()}/.dotnet-format/`;
 
 export function getInputs(): IInputs {
   const inputs: IInputs = {
