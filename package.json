@@ -45,7 +45,7 @@
     "@types/node-fetch": "2.6.5",
     "@babel/cli": "^7.21.5",
     "@babel/core": "^7.21.8",
-    "@babel/preset-env": "^7.21.5",
+    "@babel/preset-env": "^7.22.20",
     "@octokit/types": "^11.1.0",
     "@typescript-eslint/parser": "^6.7.0",
     "@vercel/ncc": "^0.38.0",
