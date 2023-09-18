@@ -44,7 +44,7 @@
     "@types/fs-extra": "^8.1.0",
     "@types/node-fetch": "2.6.5",
     "@babel/cli": "^7.21.5",
-    "@babel/core": "^7.21.8",
+    "@babel/core": "^7.22.20",
     "@babel/preset-env": "^7.21.5",
     "@octokit/types": "^11.1.0",
     "@typescript-eslint/parser": "^6.7.0",
