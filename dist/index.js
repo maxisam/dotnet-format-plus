@@ -2202,7 +2202,7 @@ var INPUTS;
 
 
 
-const REPORT_PATH = `${process.cwd()}/.dotnet-format/`;
+const REPORT_PATH = `${process.cwd()}/.dotnet-format`;
 const REPORT_ARTIFACT_NAME = 'dotnet-format-report';
 function getInputs() {
     const inputs = {
@@ -2282,7 +2282,7 @@ function getCurrentBranch() {
     return current;
 }
 async function RemoveReportFiles() {
-    const { result } = await (0,execute/* execute */.h)(`rm -rf ${REPORT_PATH}`);
+    const { result } = await (0,execute/* execute */.h)(`rm -rf ${REPORT_PATH}/`);
     return result;
 }
 
@@ -2396,10 +2396,10 @@ async function execFormat(formatArgs) {
 }
 function getReportFiles() {
     const reportPaths = [
-        `${_common__WEBPACK_IMPORTED_MODULE_3__/* .REPORT_PATH */ .kG}dotnet-format.json`,
-        `${_common__WEBPACK_IMPORTED_MODULE_3__/* .REPORT_PATH */ .kG}style-format.json`,
-        `${_common__WEBPACK_IMPORTED_MODULE_3__/* .REPORT_PATH */ .kG}analyzers-format.json`,
-        `${_common__WEBPACK_IMPORTED_MODULE_3__/* .REPORT_PATH */ .kG}whitespace-format.json`
+        `${_common__WEBPACK_IMPORTED_MODULE_3__/* .REPORT_PATH */ .kG}/dotnet-format.json`,
+        `${_common__WEBPACK_IMPORTED_MODULE_3__/* .REPORT_PATH */ .kG}/style-format.json`,
+        `${_common__WEBPACK_IMPORTED_MODULE_3__/* .REPORT_PATH */ .kG}/analyzers-format.json`,
+        `${_common__WEBPACK_IMPORTED_MODULE_3__/* .REPORT_PATH */ .kG}/whitespace-format.json`
     ];
     // check if file size is greater than 2 bytes to avoid empty report
     return reportPaths.filter(path => fs__WEBPACK_IMPORTED_MODULE_2__.existsSync(path) && fs__WEBPACK_IMPORTED_MODULE_2__.statSync(path).size > 2);

@@ -6,7 +6,7 @@ import { inspect } from 'util';
 import { execute } from './execute';
 import { FixLevelType, FormatOptions, IInputs, INPUTS } from './modals';
 
-export const REPORT_PATH = `${process.cwd()}/.dotnet-format/`;
+export const REPORT_PATH = `${process.cwd()}/.dotnet-format`;
 export const REPORT_ARTIFACT_NAME = 'dotnet-format-report';
 export function getInputs(): IInputs {
   const inputs: IInputs = {
@@ -105,6 +105,6 @@ export function getCurrentBranch(): string {
 }
 
 export async function RemoveReportFiles(): Promise<boolean> {
-  const { result } = await execute(`rm -rf ${REPORT_PATH}`);
+  const { result } = await execute(`rm -rf ${REPORT_PATH}/`);
   return result;
 }

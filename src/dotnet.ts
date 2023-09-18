@@ -100,10 +100,10 @@ export async function execFormat(formatArgs: string[]): Promise<FormatResult> {
 
 export function getReportFiles(): string[] {
   const reportPaths = [
-    `${REPORT_PATH}dotnet-format.json`,
-    `${REPORT_PATH}style-format.json`,
-    `${REPORT_PATH}analyzers-format.json`,
-    `${REPORT_PATH}whitespace-format.json`
+    `${REPORT_PATH}/dotnet-format.json`,
+    `${REPORT_PATH}/style-format.json`,
+    `${REPORT_PATH}/analyzers-format.json`,
+    `${REPORT_PATH}/whitespace-format.json`
   ];
   // check if file size is greater than 2 bytes to avoid empty report
   return reportPaths.filter(path => fs.existsSync(path) && fs.statSync(path).size > 2);
