@@ -87,6 +87,14 @@ inputs:
     description: Message used for the commit
     required: false
     default: '🤖 refactor: Apply dotnet-format changes'
+  jscpdCheck:
+    description: "Run jscpd to check for code duplication"
+    required: false
+    default: "false"
+  jscpdConfigPath:
+    description: "Path to jscpd config file"
+    required: false
+    default: ".jscpd.json"
 
 outputs:
   hasChanges:

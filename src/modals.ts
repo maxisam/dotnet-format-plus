@@ -15,7 +15,9 @@ export enum INPUTS {
   commitUsername = 'commitUsername',
   commitUserEmail = 'commitUserEmail',
   commitMessage = 'commitMessage',
-  nugetConfigPath = 'nugetConfigPath'
+  nugetConfigPath = 'nugetConfigPath',
+  jscpdCheck = 'jscpdCheck',
+  jscpdConfigPath = 'jscpdConfigPath'
 }
 
 export interface IInputs {
@@ -36,6 +38,8 @@ export interface IInputs {
   commitUserEmail: string;
   commitMessage: string;
   nugetConfigPath: string;
+  jscpdCheck: boolean;
+  jscpdConfigPath: string;
 }
 
 export type FixLevelType = 'error' | 'info' | 'warn';

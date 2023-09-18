@@ -26,7 +26,9 @@ export function getInputs(): IInputs {
     commitUsername: core.getInput(INPUTS.commitUsername),
     commitUserEmail: core.getInput(INPUTS.commitUserEmail),
     commitMessage: core.getInput(INPUTS.commitMessage),
-    nugetConfigPath: core.getInput(INPUTS.nugetConfigPath)
+    nugetConfigPath: core.getInput(INPUTS.nugetConfigPath),
+    jscpdConfigPath: core.getInput(INPUTS.jscpdConfigPath),
+    jscpdCheck: core.getInput(INPUTS.jscpdCheck) === 'true'
   };
   core.debug(`Inputs: ${inspect(inputs)}`);
   return inputs;

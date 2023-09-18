@@ -5,6 +5,7 @@ import { inspect } from 'util';
 import * as Common from './common';
 import { REPORT_ARTIFACT_NAME } from './common';
 import * as dotnet from './dotnet';
+import { duplicatedCheck } from './duplicated';
 import * as git from './git';
 
 async function setOutput(isDryRun: boolean): Promise<void> {
@@ -48,6 +49,9 @@ async function run(): Promise<boolean> {
       if (isCommit) {
         await git.push(currentBranch);
       }
+    }
+    if (inputs.jscpdCheck) {
+      await duplicatedCheck(inputs.workspace, inputs.jscpdConfigPath, githubClient);
     }
     return finalFormatResult;
   } catch (error) {
