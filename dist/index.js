@@ -2415,7 +2415,9 @@ function generateReport(reports) {
     return `✅ Formatting succeeded\n\n ${markdownReport}`;
 }
 async function nugetRestore(nugetConfigPath, workspace) {
-    const { result } = await (0,_execute__WEBPACK_IMPORTED_MODULE_4__/* .execute */ .h)('dotnet restore', process.cwd(), [`-p:RestoreConfigFile=${workspace}${nugetConfigPath}`, `${workspace}`], false, false);
+    const { result } = await (0,_execute__WEBPACK_IMPORTED_MODULE_4__/* .execute */ .h)('dotnet restore', process.cwd(), 
+    // for some reason dotnet restore doesn't work with --configfile
+    [`-p:RestoreConfigFile=${workspace}${nugetConfigPath}`, `${workspace}`], false, false);
     return result;
 }
 function generateMarkdownReport(documents, title) {
