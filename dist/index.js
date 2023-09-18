@@ -2191,6 +2191,7 @@ var INPUTS;
     INPUTS["commitUsername"] = "commitUsername";
     INPUTS["commitUserEmail"] = "commitUserEmail";
     INPUTS["commitMessage"] = "commitMessage";
+    INPUTS["nugetConfigPath"] = "nugetConfigPath";
 })(INPUTS || (INPUTS = {}));
 
 ;// CONCATENATED MODULE: ./lib/common.js
@@ -2220,7 +2221,8 @@ function getInputs() {
         logLevel: core.getInput(INPUTS.logLevel),
         commitUsername: core.getInput(INPUTS.commitUsername),
         commitUserEmail: core.getInput(INPUTS.commitUserEmail),
-        commitMessage: core.getInput(INPUTS.commitMessage)
+        commitMessage: core.getInput(INPUTS.commitMessage),
+        nugetConfigPath: core.getInput(INPUTS.nugetConfigPath)
     };
     core.debug(`Inputs: ${(0,external_util_.inspect)(inputs)}`);
     return inputs;
@@ -2295,6 +2297,8 @@ async function RemoveReportFiles() {
 /* harmony export */   "Iu": () => (/* binding */ execFormat),
 /* harmony export */   "OE": () => (/* binding */ generateReport),
 /* harmony export */   "bs": () => (/* binding */ buildFormatCommandArgs),
+/* harmony export */   "hm": () => (/* binding */ nugetRestore),
+/* harmony export */   "mI": () => (/* binding */ setDotnetEnvironmentVariables),
 /* harmony export */   "xd": () => (/* binding */ getReportFiles)
 /* harmony export */ });
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(2186);
@@ -2377,9 +2381,11 @@ async function buildFormatCommandArgs(options, getFilesToCheck) {
         }
     });
 }
-async function execFormat(formatArgs) {
+function setDotnetEnvironmentVariables() {
     process.env.DOTNET_CLI_TELEMETRY_OPTOUT = 'true';
     process.env.DOTNET_NOLOGO = 'true';
+}
+async function execFormat(formatArgs) {
     const { stdout, stderr } = await (0,_execute__WEBPACK_IMPORTED_MODULE_4__/* .execute */ .h)('dotnet', process.cwd(), formatArgs, false, true);
     // dotnet format returns non-zero exit code if there are formatting issues
     // but we don't want to fail the action in this case
@@ -2399,20 +2405,23 @@ function getReportFiles() {
     return reportPaths.filter(path => fs__WEBPACK_IMPORTED_MODULE_2__.existsSync(path) && fs__WEBPACK_IMPORTED_MODULE_2__.statSync(path).size > 2);
 }
 function generateReport(reports) {
-    let markdownReport = '✅ Formatting succeeded\n\n';
+    let markdownReport = '';
     for (const report of reports) {
         // get file name from report path without extension
         const fileName = report.split('/').pop()?.split('.')[0] || '';
         const reportJson = JSON.parse(fs__WEBPACK_IMPORTED_MODULE_2__.readFileSync(report, 'utf8'));
         markdownReport += generateMarkdownReport(reportJson, fileName.toLocaleUpperCase());
     }
-    return markdownReport;
+    return `✅ Formatting succeeded\n\n ${markdownReport}`;
+}
+async function nugetRestore(nugetConfigPath, workspace) {
+    const { result } = await (0,_execute__WEBPACK_IMPORTED_MODULE_4__/* .execute */ .h)('dotnet restore', process.cwd(), [`-p:RestoreConfigFile=${workspace}${nugetConfigPath}`, `${workspace}`], false, false);
+    return result;
 }
 function generateMarkdownReport(documents, title) {
     let markdown = '<details>\n';
     markdown += ` <summary> ${title} Report </summary>\n\n`;
     const cwd = process.cwd();
-    (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`🔍 cwd: ${cwd}`);
     for (const doc of documents) {
         markdown += `- **${doc.FileName}**\n`;
         markdown += `  - **Path:** ${toGithubLink(doc.FilePath, cwd)}\n`;
@@ -2439,8 +2448,11 @@ function toGithubLink(path, cwd) {
 /* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
 /* harmony export */   "h": () => (/* binding */ execute)
 /* harmony export */ });
-/* harmony import */ var _actions_exec__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(1514);
-/* harmony import */ var _actions_exec__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_exec__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(2186);
+/* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _actions_exec__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(1514);
+/* harmony import */ var _actions_exec__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(_actions_exec__WEBPACK_IMPORTED_MODULE_1__);
+
 
 /** Wrapper around the GitHub toolkit exec command which returns the output.
  * Also allows you to easily toggle the current working directory.
@@ -2449,7 +2461,8 @@ function toGithubLink(path, cwd) {
 async function execute(cmd, cwd = process.cwd(), args = [], silent = false, ignoreReturnCode = false) {
     const stdout = [];
     const stderr = [];
-    const exitCode = await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)(cmd, args, {
+    (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`🔍 cwd: ${cwd}`);
+    const exitCode = await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec)(cmd, args, {
         silent,
         cwd,
         listeners: {
@@ -2675,6 +2688,10 @@ async function run() {
         const inputs = _common__WEBPACK_IMPORTED_MODULE_3__/* .getInputs */ .G9();
         (0,util__WEBPACK_IMPORTED_MODULE_2__.inspect)(inputs);
         const githubClient = _common__WEBPACK_IMPORTED_MODULE_3__/* .getOctokitRest */ .IT(inputs.authToken);
+        _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .setDotnetEnvironmentVariables */ .mI();
+        if (inputs.nugetConfigPath) {
+            await _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .nugetRestore */ .hm(inputs.nugetConfigPath, inputs.workspace);
+        }
         const options = _common__WEBPACK_IMPORTED_MODULE_3__/* .getFormatOptions */ .oE(inputs);
         const formatArgs = await _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .buildFormatCommandArgs */ .bs(options, async () => {
             return await _git__WEBPACK_IMPORTED_MODULE_5__/* .getPullRequestFiles */ .p0(githubClient);
@@ -2688,7 +2705,7 @@ async function run() {
         const reportFiles = _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .getReportFiles */ .xd();
         await _git__WEBPACK_IMPORTED_MODULE_5__/* .UploadReportToArtifacts */ .BC(reportFiles, _common__WEBPACK_IMPORTED_MODULE_3__/* .REPORT_ARTIFACT_NAME */ .GB);
         await setOutput(options.dryRun);
-        if (_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.eventName === 'pull_request' && !options.dryRun) {
+        if (finalFormatResult && _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.eventName === 'pull_request' && !options.dryRun) {
             await _git__WEBPACK_IMPORTED_MODULE_5__/* .comment */ .UI(githubClient, _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .generateReport */ .OE(reportFiles));
             const isRemoved = await _common__WEBPACK_IMPORTED_MODULE_3__/* .RemoveReportFiles */ .VO();
             const isInit = isRemoved && (await _git__WEBPACK_IMPORTED_MODULE_5__/* .init */ .S1(process.cwd(), inputs.commitUsername, inputs.commitUserEmail));

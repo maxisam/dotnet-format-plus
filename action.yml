@@ -30,6 +30,11 @@ inputs:
     description: "The solution or project file to operate on."
     required: true
 
+  nugetConfigPath:
+    description: "The path to the NuGet configuration file from workspace. e.g. `NuGet.config`"
+    required: false
+    default: ""
+
   include:
     description: "The files to include, delimited by space."
     required: false

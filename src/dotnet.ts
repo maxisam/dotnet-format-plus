@@ -82,9 +82,12 @@ export async function buildFormatCommandArgs(options: FormatOptions, getFilesToC
   });
 }
 
-export async function execFormat(formatArgs: string[]): Promise<FormatResult> {
+export function setDotnetEnvironmentVariables(): void {
   process.env.DOTNET_CLI_TELEMETRY_OPTOUT = 'true';
   process.env.DOTNET_NOLOGO = 'true';
+}
+
+export async function execFormat(formatArgs: string[]): Promise<FormatResult> {
   const { stdout, stderr } = await execute('dotnet', process.cwd(), formatArgs, false, true);
   // dotnet format returns non-zero exit code if there are formatting issues
   // but we don't want to fail the action in this case
@@ -107,21 +110,32 @@ export function getReportFiles(): string[] {
 }
 
 export function generateReport(reports: string[]): string {
-  let markdownReport = '✅ Formatting succeeded\n\n';
+  let markdownReport = '';
   for (const report of reports) {
     // get file name from report path without extension
     const fileName = report.split('/').pop()?.split('.')[0] || '';
     const reportJson = JSON.parse(fs.readFileSync(report, 'utf8')) as ReportItem[];
     markdownReport += generateMarkdownReport(reportJson, fileName.toLocaleUpperCase());
   }
-  return markdownReport;
+  return `✅ Formatting succeeded\n\n ${markdownReport}`;
+}
+
+export async function nugetRestore(nugetConfigPath: string, workspace: string): Promise<boolean> {
+  const { result } = await execute(
+    'dotnet restore',
+    process.cwd(),
+    // for some reason dotnet restore doesn't work with --configfile
+    [`-p:RestoreConfigFile=${workspace}${nugetConfigPath}`, `${workspace}`],
+    false,
+    false
+  );
+  return result;
 }
 
 function generateMarkdownReport(documents: ReportItem[], title: string): string {
   let markdown = '<details>\n';
   markdown += ` <summary> ${title} Report </summary>\n\n`;
   const cwd = process.cwd();
-  info(`🔍 cwd: ${cwd}`);
   for (const doc of documents) {
     markdown += `- **${doc.FileName}**\n`;
     markdown += `  - **Path:** ${toGithubLink(doc.FilePath, cwd)}\n`;

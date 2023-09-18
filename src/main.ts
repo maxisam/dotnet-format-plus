@@ -22,6 +22,10 @@ async function run(): Promise<boolean> {
     const inputs = Common.getInputs();
     inspect(inputs);
     const githubClient = Common.getOctokitRest(inputs.authToken);
+    dotnet.setDotnetEnvironmentVariables();
+    if (inputs.nugetConfigPath) {
+      await dotnet.nugetRestore(inputs.nugetConfigPath, inputs.workspace);
+    }
     const options = Common.getFormatOptions(inputs);
     const formatArgs = await dotnet.buildFormatCommandArgs(options, async () => {
       return await git.getPullRequestFiles(githubClient);
@@ -35,7 +39,7 @@ async function run(): Promise<boolean> {
     const reportFiles = dotnet.getReportFiles();
     await git.UploadReportToArtifacts(reportFiles, REPORT_ARTIFACT_NAME);
     await setOutput(options.dryRun);
-    if (context.eventName === 'pull_request' && !options.dryRun) {
+    if (finalFormatResult && context.eventName === 'pull_request' && !options.dryRun) {
       await git.comment(githubClient, dotnet.generateReport(reportFiles));
       const isRemoved = await Common.RemoveReportFiles();
       const isInit = isRemoved && (await git.init(process.cwd(), inputs.commitUsername, inputs.commitUserEmail));

@@ -14,7 +14,8 @@ export enum INPUTS {
   logLevel = 'logLevel',
   commitUsername = 'commitUsername',
   commitUserEmail = 'commitUserEmail',
-  commitMessage = 'commitMessage'
+  commitMessage = 'commitMessage',
+  nugetConfigPath = 'nugetConfigPath'
 }
 
 export interface IInputs {
@@ -34,6 +35,7 @@ export interface IInputs {
   commitUsername: string;
   commitUserEmail: string;
   commitMessage: string;
+  nugetConfigPath: string;
 }
 
 export type FixLevelType = 'error' | 'info' | 'warn';

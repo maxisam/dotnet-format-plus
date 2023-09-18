@@ -25,7 +25,8 @@ export function getInputs(): IInputs {
     logLevel: core.getInput(INPUTS.logLevel),
     commitUsername: core.getInput(INPUTS.commitUsername),
     commitUserEmail: core.getInput(INPUTS.commitUserEmail),
-    commitMessage: core.getInput(INPUTS.commitMessage)
+    commitMessage: core.getInput(INPUTS.commitMessage),
+    nugetConfigPath: core.getInput(INPUTS.nugetConfigPath)
   };
   core.debug(`Inputs: ${inspect(inputs)}`);
   return inputs;
