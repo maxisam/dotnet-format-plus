@@ -2556,7 +2556,7 @@ async function duplicatedCheck(workspace, jscpdConfigPath, jscpdCheckAsError, gi
     }
     else {
         (0,core.setOutput)('hasDuplicates', 'false');
-        (0,core.notice)('✅✅✅✅✅ NO DUPLICATED CODE FOUND ✅✅✅✅✅', ANNOTATION_OPTIONS);
+        (0,core.notice)('✅ NO DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
     }
 }
 async function jscpdCheck(workspace, jscpdConfigPath) {

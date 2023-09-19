@@ -33,7 +33,7 @@ export async function duplicatedCheck(
         await execute(`rm -rf ${cwd}/${REPORT_ARTIFACT_NAME}`);
     } else {
         setOutput('hasDuplicates', 'false');
-        notice('✅✅✅✅✅ NO DUPLICATED CODE FOUND ✅✅✅✅✅', ANNOTATION_OPTIONS);
+        notice('✅ NO DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
     }
 }
 
