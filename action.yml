@@ -1,6 +1,6 @@
 name: "dotnet-format-plus"
 
-description: "Run dotnet format and optionally apply any fixes"
+description: "Run dotnet format & JSCPD and optionally apply any fixes"
 
 branding:
   icon: "navigation-2"
