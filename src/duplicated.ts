@@ -1,8 +1,7 @@
-import { info, notice } from '@actions/core';
+import { error, info, notice, warning } from '@actions/core';
 import { context } from '@actions/github';
 import { IClone, IOptions } from '@jscpd/core';
 import { Octokit } from '@octokit/rest';
-import { error } from 'console';
 import * as fs from 'fs';
 import { readJSONSync } from 'fs-extra';
 import { detectClones } from 'jscpd';
@@ -12,13 +11,18 @@ import { execute } from './execute';
 import * as git from './git';
 export const REPORT_ARTIFACT_NAME = 'jscpd-report';
 
-export async function duplicatedCheck(workspace: string, jscpdConfigPath: string, githubClient: InstanceType<typeof Octokit>): Promise<void> {
+export async function duplicatedCheck(
+    workspace: string,
+    jscpdConfigPath: string,
+    jscpdCheckAsError: boolean,
+    githubClient: InstanceType<typeof Octokit>
+): Promise<void> {
     const cwd = process.cwd();
     const path = checkWorkspace(workspace);
     const clones = await jscpdCheck(path, jscpdConfigPath);
     if (clones.length > 0) {
-        error('❌ DUPLICATED CODE FOUND');
-        showNotice(clones, cwd);
+        info('❌ DUPLICATED CODE FOUND');
+        showNotice(clones, cwd, jscpdCheckAsError);
         const reportFiles = getReportFiles(cwd);
         const markdownReport = reportFiles.find(file => file.endsWith('.md')) as string;
         const message = await Comment(githubClient, markdownReport, clones);
@@ -84,9 +88,10 @@ function checkWorkspace(workspace: string): string {
     return workspace;
 }
 
-function showNotice(clones: IClone[], cwd: string): void {
+function showNotice(clones: IClone[], cwd: string, jscpdCheckAsError: boolean): void {
+    const show = jscpdCheckAsError ? error : warning;
     for (const clone of clones) {
-        notice(
+        show(
             `${clone.duplicationA.sourceId.replace(cwd, '')} (${clone.duplicationA.start.line}-${clone.duplicationA.end.line})
             and ${clone.duplicationB.sourceId.replace(cwd, '')} (${clone.duplicationB.start.line}-${clone.duplicationB.end.line})`,
             {

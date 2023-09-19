@@ -28,7 +28,8 @@ export function getInputs(): IInputs {
         commitMessage: core.getInput(INPUTS.commitMessage),
         nugetConfigPath: core.getInput(INPUTS.nugetConfigPath),
         jscpdConfigPath: core.getInput(INPUTS.jscpdConfigPath),
-        jscpdCheck: core.getInput(INPUTS.jscpdCheck) === 'true'
+        jscpdCheck: core.getInput(INPUTS.jscpdCheck) === 'true',
+        jscpdCheckAsError: core.getInput(INPUTS.jscpdCheckAsError) === 'true'
     };
     core.debug(`Inputs: ${inspect(inputs)}`);
     return inputs;

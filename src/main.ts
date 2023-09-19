@@ -51,7 +51,7 @@ async function run(): Promise<boolean> {
             }
         }
         if (inputs.jscpdCheck) {
-            await duplicatedCheck(inputs.workspace, inputs.jscpdConfigPath, githubClient);
+            await duplicatedCheck(inputs.workspace, inputs.jscpdConfigPath, inputs.jscpdCheckAsError, githubClient);
         }
         return finalFormatResult;
     } catch (error) {
