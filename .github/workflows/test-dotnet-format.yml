@@ -1,10 +1,10 @@
-name: "🧪 Test dotnet format"
+name: '🧪 Test dotnet format'
 
 on:
   workflow_dispatch:
   pull_request:
     paths:
-      - "__tests__/dotnet/**"
+      - '__tests__/dotnet/**'
     branches:
       - main
 
@@ -20,5 +20,9 @@ jobs:
         with:
           authToken: ${{ secrets.GITHUB_TOKEN }}
           workspace: ${{ github.workspace }}/__tests__/dotnet/Console/Console.sln
+          jscpdCheck: 'true'
+          jscpdConfigPath: ${{ github.workspace }}/__tests__/dotnet/Console/.jscpd.json
+          jscpdCheckAsError: 'true'
+
       - name: log-output
         run: echo "${{ steps.dotnet-format.outputs.output }}"
