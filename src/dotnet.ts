@@ -6,6 +6,9 @@ import { REPORT_PATH } from './common';
 import { execute } from './execute';
 import { FormatOptions, FormatResult, ReportItem } from './modals';
 
+export const ANNOTATION_OPTIONS = {
+    title: 'DOTNET FORMAT Check'
+};
 function formatOnlyChangedFiles(onlyChangedFiles: boolean): boolean {
     if (onlyChangedFiles) {
         if (context.eventName === 'issue_comment' || context.eventName === 'pull_request') {
@@ -39,7 +42,7 @@ function buildFormatCommandArgsVariants(options: FormatOptions): string[][] {
     if (dotnetFormatOptions.length) {
         return dotnetFormatOptions;
     } else {
-        warning('All fix options are disabled. Falling back to default format command');
+        warning('All fix options are disabled. Falling back to default format command', ANNOTATION_OPTIONS);
         return [['format']];
     }
 }
@@ -64,7 +67,7 @@ export async function buildFormatCommandArgs(options: FormatOptions, getFilesToC
 
         if (!filesToCheck.length) {
             debug('No files found for formatting');
-            warning('No files found for formatting');
+            warning('No files found for formatting', ANNOTATION_OPTIONS);
         }
 
         dotnetFormatOptions.push('--include', filesToCheck.join(' '));

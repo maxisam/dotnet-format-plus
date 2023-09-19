@@ -9,6 +9,9 @@ import * as git from './git';
 import { readConfig } from './readConfig';
 export const REPORT_ARTIFACT_NAME = 'jscpd-report';
 
+const ANNOTATION_OPTIONS = {
+    title: 'JSCPD Check'
+};
 export async function duplicatedCheck(
     workspace: string,
     jscpdConfigPath: string,
@@ -19,9 +22,9 @@ export async function duplicatedCheck(
     const path = checkWorkspace(workspace);
     const clones = await jscpdCheck(path, jscpdConfigPath);
     if (clones.length > 0) {
-        jscpdCheckAsError ? setFailed('❌ DUPLICATED CODE FOUND') : warning('❌ DUPLICATED CODE FOUND');
+        jscpdCheckAsError ? setFailed('❌ DUPLICATED CODE FOUND') : warning('❌ DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
         setOutput('hasDuplicates', 'true');
-        showNotice(clones, cwd, jscpdCheckAsError);
+        showAnnotation(clones, cwd, jscpdCheckAsError);
         const reportFiles = getReportFiles(cwd);
         const markdownReport = reportFiles.find(file => file.endsWith('.md')) as string;
         const message = await Comment(githubClient, markdownReport, clones);
@@ -30,7 +33,7 @@ export async function duplicatedCheck(
         await execute(`rm -rf ${cwd}/${REPORT_ARTIFACT_NAME}`);
     } else {
         setOutput('hasDuplicates', 'false');
-        notice('✅✅✅✅✅ NO DUPLICATED CODE FOUND ✅✅✅✅✅');
+        notice('✅✅✅✅✅ NO DUPLICATED CODE FOUND ✅✅✅✅✅', ANNOTATION_OPTIONS);
     }
 }
 
@@ -69,14 +72,14 @@ function checkWorkspace(workspace: string): string {
     return workspace;
 }
 
-function showNotice(clones: IClone[], cwd: string, jscpdCheckAsError: boolean): void {
+function showAnnotation(clones: IClone[], cwd: string, jscpdCheckAsError: boolean): void {
     const show = jscpdCheckAsError ? error : warning;
     for (const clone of clones) {
         show(
             `${clone.duplicationA.sourceId.replace(cwd, '')} (${clone.duplicationA.start.line}-${clone.duplicationA.end.line})
             and ${clone.duplicationB.sourceId.replace(cwd, '')} (${clone.duplicationB.start.line}-${clone.duplicationB.end.line})`,
             {
-                title: 'Duplicated code',
+                title: ANNOTATION_OPTIONS.title,
                 file: clone.duplicationA.sourceId,
                 startLine: clone.duplicationA.start.line,
                 endLine: clone.duplicationA.end.line

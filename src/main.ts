@@ -1,5 +1,4 @@
 import * as core from '@actions/core';
-import { info } from '@actions/core';
 import { context } from '@actions/github';
 import { inspect } from 'util';
 import * as Common from './common';
@@ -11,10 +10,10 @@ import * as git from './git';
 async function setOutput(isDryRun: boolean): Promise<void> {
     if (isDryRun) {
         core.setOutput('hasChanges', 'false');
-        core.notice('Dry run mode. No changes will be committed.');
+        core.notice('Dry run mode. No changes will be committed.', dotnet.ANNOTATION_OPTIONS);
     } else {
         const isFileChanged = await git.checkIsFileChanged();
-        core.warning(`Dotnet Format File Changed: ${isFileChanged}`);
+        core.warning(`Dotnet Format File Changed: ${isFileChanged}`, dotnet.ANNOTATION_OPTIONS);
         core.setOutput('hasChanges', isFileChanged.toString());
     }
 }
@@ -35,7 +34,7 @@ async function run(): Promise<boolean> {
         let finalFormatResult = false;
         for (const args of formatArgs) {
             const { formatResult } = await dotnet.execFormat(args);
-            info(`✅✅✅✅✅ DOTNET FORMAT SUCCESS: ${formatResult} ✅✅✅✅✅`);
+            core.info(`✅✅✅✅✅ DOTNET FORMAT SUCCESS: ${formatResult} ✅✅✅✅✅`);
             finalFormatResult = finalFormatResult || formatResult;
         }
         const reportFiles = dotnet.getReportFiles();
@@ -51,7 +50,9 @@ async function run(): Promise<boolean> {
                 await git.push(currentBranch);
             }
         }
-        finalFormatResult ? core.notice('✅ DOTNET FORMAT SUCCESS') : core.error('DOTNET FORMAT FAILED');
+        finalFormatResult
+            ? core.notice('✅ DOTNET FORMAT SUCCESS', dotnet.ANNOTATION_OPTIONS)
+            : core.error('DOTNET FORMAT FAILED', dotnet.ANNOTATION_OPTIONS);
         if (inputs.jscpdCheck) {
             await duplicatedCheck(inputs.workspace, inputs.jscpdConfigPath, inputs.jscpdCheckAsError, githubClient);
         }

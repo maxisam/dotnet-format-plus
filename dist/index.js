@@ -2305,7 +2305,8 @@ async function RemoveReportFiles() {
 /* harmony export */   "bs": () => (/* binding */ buildFormatCommandArgs),
 /* harmony export */   "hm": () => (/* binding */ nugetRestore),
 /* harmony export */   "mI": () => (/* binding */ setDotnetEnvironmentVariables),
-/* harmony export */   "xd": () => (/* binding */ getReportFiles)
+/* harmony export */   "xd": () => (/* binding */ getReportFiles),
+/* harmony export */   "xu": () => (/* binding */ ANNOTATION_OPTIONS)
 /* harmony export */ });
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(42186);
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
@@ -2320,6 +2321,9 @@ async function RemoveReportFiles() {
 
 
 
+const ANNOTATION_OPTIONS = {
+    title: 'DOTNET FORMAT Check'
+};
 function formatOnlyChangedFiles(onlyChangedFiles) {
     if (onlyChangedFiles) {
         if (_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.eventName === 'issue_comment' || _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.eventName === 'pull_request') {
@@ -2351,7 +2355,7 @@ function buildFormatCommandArgsVariants(options) {
         return dotnetFormatOptions;
     }
     else {
-        (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.warning)('All fix options are disabled. Falling back to default format command');
+        (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.warning)('All fix options are disabled. Falling back to default format command', ANNOTATION_OPTIONS);
         return [['format']];
     }
 }
@@ -2371,7 +2375,7 @@ async function buildFormatCommandArgs(options, getFilesToCheck) {
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`Checking ${filesToCheck.length} files`);
         if (!filesToCheck.length) {
             (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.debug)('No files found for formatting');
-            (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.warning)('No files found for formatting');
+            (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.warning)('No files found for formatting', ANNOTATION_OPTIONS);
         }
         dotnetFormatOptions.push('--include', filesToCheck.join(' '));
     }
@@ -2529,14 +2533,17 @@ function readConfig(config, workspace, defaultConfig) {
 
 
 const REPORT_ARTIFACT_NAME = 'jscpd-report';
+const ANNOTATION_OPTIONS = {
+    title: 'JSCPD Check'
+};
 async function duplicatedCheck(workspace, jscpdConfigPath, jscpdCheckAsError, githubClient) {
     const cwd = process.cwd();
     const path = checkWorkspace(workspace);
     const clones = await jscpdCheck(path, jscpdConfigPath);
     if (clones.length > 0) {
-        jscpdCheckAsError ? (0,core.setFailed)('❌ DUPLICATED CODE FOUND') : (0,core.warning)('❌ DUPLICATED CODE FOUND');
+        jscpdCheckAsError ? (0,core.setFailed)('❌ DUPLICATED CODE FOUND') : (0,core.warning)('❌ DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
         (0,core.setOutput)('hasDuplicates', 'true');
-        showNotice(clones, cwd, jscpdCheckAsError);
+        showAnnotation(clones, cwd, jscpdCheckAsError);
         const reportFiles = getReportFiles(cwd);
         const markdownReport = reportFiles.find(file => file.endsWith('.md'));
         const message = await Comment(githubClient, markdownReport, clones);
@@ -2546,7 +2553,7 @@ async function duplicatedCheck(workspace, jscpdConfigPath, jscpdCheckAsError, gi
     }
     else {
         (0,core.setOutput)('hasDuplicates', 'false');
-        (0,core.notice)('✅✅✅✅✅ NO DUPLICATED CODE FOUND ✅✅✅✅✅');
+        (0,core.notice)('✅✅✅✅✅ NO DUPLICATED CODE FOUND ✅✅✅✅✅', ANNOTATION_OPTIONS);
     }
 }
 async function jscpdCheck(workspace, jscpdConfigPath) {
@@ -2580,12 +2587,12 @@ function checkWorkspace(workspace) {
     }
     return workspace;
 }
-function showNotice(clones, cwd, jscpdCheckAsError) {
+function showAnnotation(clones, cwd, jscpdCheckAsError) {
     const show = jscpdCheckAsError ? core.error : core.warning;
     for (const clone of clones) {
         show(`${clone.duplicationA.sourceId.replace(cwd, '')} (${clone.duplicationA.start.line}-${clone.duplicationA.end.line})
             and ${clone.duplicationB.sourceId.replace(cwd, '')} (${clone.duplicationB.start.line}-${clone.duplicationB.end.line})`, {
-            title: 'Duplicated code',
+            title: ANNOTATION_OPTIONS.title,
             file: clone.duplicationA.sourceId,
             startLine: clone.duplicationA.start.line,
             endLine: clone.duplicationA.end.line
@@ -2853,15 +2860,14 @@ __nccwpck_require__.r(__webpack_exports__);
 
 
 
-
 async function setOutput(isDryRun) {
     if (isDryRun) {
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('hasChanges', 'false');
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.notice('Dry run mode. No changes will be committed.');
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.notice('Dry run mode. No changes will be committed.', _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .ANNOTATION_OPTIONS */ .xu);
     }
     else {
         const isFileChanged = await _git__WEBPACK_IMPORTED_MODULE_6__/* .checkIsFileChanged */ .gr();
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.warning(`Dotnet Format File Changed: ${isFileChanged}`);
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.warning(`Dotnet Format File Changed: ${isFileChanged}`, _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .ANNOTATION_OPTIONS */ .xu);
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('hasChanges', isFileChanged.toString());
     }
 }
@@ -2881,7 +2887,7 @@ async function run() {
         let finalFormatResult = false;
         for (const args of formatArgs) {
             const { formatResult } = await _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .execFormat */ .Iu(args);
-            (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`✅✅✅✅✅ DOTNET FORMAT SUCCESS: ${formatResult} ✅✅✅✅✅`);
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`✅✅✅✅✅ DOTNET FORMAT SUCCESS: ${formatResult} ✅✅✅✅✅`);
             finalFormatResult = finalFormatResult || formatResult;
         }
         const reportFiles = _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .getReportFiles */ .xd();
@@ -2897,7 +2903,9 @@ async function run() {
                 await _git__WEBPACK_IMPORTED_MODULE_6__/* .push */ .VF(currentBranch);
             }
         }
-        finalFormatResult ? _actions_core__WEBPACK_IMPORTED_MODULE_0__.notice('✅ DOTNET FORMAT SUCCESS') : _actions_core__WEBPACK_IMPORTED_MODULE_0__.error('DOTNET FORMAT FAILED');
+        finalFormatResult
+            ? _actions_core__WEBPACK_IMPORTED_MODULE_0__.notice('✅ DOTNET FORMAT SUCCESS', _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .ANNOTATION_OPTIONS */ .xu)
+            : _actions_core__WEBPACK_IMPORTED_MODULE_0__.error('DOTNET FORMAT FAILED', _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .ANNOTATION_OPTIONS */ .xu);
         if (inputs.jscpdCheck) {
             await (0,_duplicated__WEBPACK_IMPORTED_MODULE_5__/* .duplicatedCheck */ .O8)(inputs.workspace, inputs.jscpdConfigPath, inputs.jscpdCheckAsError, githubClient);
         }
