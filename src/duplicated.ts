@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import { readJSONSync } from 'fs-extra';
 import { detectClones } from 'jscpd';
 import { resolve } from 'path';
+import { inspect } from 'util';
 import { execute } from './execute';
 import * as git from './git';
 export const REPORT_ARTIFACT_NAME = 'jscpd-report';
@@ -44,15 +45,20 @@ export async function jscpdCheck(workspace: string, jscpdConfigPath: string): Pr
 }
 
 function readConfig(config: string): Partial<IOptions> {
-    const configFile: string = config ? resolve(config) : resolve('.jscpd.json');
+    info(`🔎 config: ${config}`);
+    const configFile = resolve(config || '.jscpd.json');
     const configExists = fs.existsSync(configFile);
     if (configExists) {
         const result = { config: configFile, ...readJSONSync(configFile) };
+        info('🔎 reading config...');
+        inspect(result);
         if (result.path) {
             // the path should comes from the action workspace
             delete result.path;
         }
         return result;
+    } else {
+        notice(`🔎 config: ${config} not found`);
     }
     return {};
 }
@@ -105,6 +111,8 @@ async function Comment(githubClient: InstanceType<typeof Octokit>, markdownRepor
     }
     markdown += '</details>\n';
     const message = `❌ DUPLICATED CODE FOUND \n\n${report}\n\n ${markdown}`;
+    // save to file
+    fs.writeFileSync(markdownReport, message);
     return await git.comment(githubClient, message);
 }
 

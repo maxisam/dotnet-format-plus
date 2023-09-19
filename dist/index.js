@@ -2469,8 +2469,11 @@ function toGithubLink(path, cwd) {
 /* harmony import */ var jscpd__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__nccwpck_require__.n(jscpd__WEBPACK_IMPORTED_MODULE_5__);
 /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_6__ = __nccwpck_require__(71017);
 /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__nccwpck_require__.n(path__WEBPACK_IMPORTED_MODULE_6__);
-/* harmony import */ var _execute__WEBPACK_IMPORTED_MODULE_7__ = __nccwpck_require__(3532);
-/* harmony import */ var _git__WEBPACK_IMPORTED_MODULE_8__ = __nccwpck_require__(53374);
+/* harmony import */ var util__WEBPACK_IMPORTED_MODULE_7__ = __nccwpck_require__(73837);
+/* harmony import */ var util__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__nccwpck_require__.n(util__WEBPACK_IMPORTED_MODULE_7__);
+/* harmony import */ var _execute__WEBPACK_IMPORTED_MODULE_8__ = __nccwpck_require__(3532);
+/* harmony import */ var _git__WEBPACK_IMPORTED_MODULE_9__ = __nccwpck_require__(53374);
+
 
 
 
@@ -2490,9 +2493,9 @@ async function duplicatedCheck(workspace, jscpdConfigPath, githubClient) {
         showNotice(clones, cwd);
         const reportFiles = getReportFiles(cwd);
         const markdownReport = reportFiles.find(file => file.endsWith('.md'));
-        await _git__WEBPACK_IMPORTED_MODULE_8__/* .UploadReportToArtifacts */ .BC([markdownReport], REPORT_ARTIFACT_NAME);
+        await _git__WEBPACK_IMPORTED_MODULE_9__/* .UploadReportToArtifacts */ .BC([markdownReport], REPORT_ARTIFACT_NAME);
         await Comment(githubClient, markdownReport, clones);
-        await (0,_execute__WEBPACK_IMPORTED_MODULE_7__/* .execute */ .h)(`rm -rf ${cwd}/${REPORT_ARTIFACT_NAME}`);
+        await (0,_execute__WEBPACK_IMPORTED_MODULE_8__/* .execute */ .h)(`rm -rf ${cwd}/${REPORT_ARTIFACT_NAME}`);
     }
     else {
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)('✅✅✅✅✅ NO DUPLICATED CODE FOUND ✅✅✅✅✅');
@@ -2512,15 +2515,21 @@ async function jscpdCheck(workspace, jscpdConfigPath) {
     return clones;
 }
 function readConfig(config) {
-    const configFile = config ? (0,path__WEBPACK_IMPORTED_MODULE_6__.resolve)(config) : (0,path__WEBPACK_IMPORTED_MODULE_6__.resolve)('.jscpd.json');
+    (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`🔎 config: ${config}`);
+    const configFile = (0,path__WEBPACK_IMPORTED_MODULE_6__.resolve)(config || '.jscpd.json');
     const configExists = fs__WEBPACK_IMPORTED_MODULE_3__.existsSync(configFile);
     if (configExists) {
         const result = { config: configFile, ...(0,fs_extra__WEBPACK_IMPORTED_MODULE_4__.readJSONSync)(configFile) };
+        (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)('🔎 reading config...');
+        (0,util__WEBPACK_IMPORTED_MODULE_7__.inspect)(result);
         if (result.path) {
             // the path should comes from the action workspace
             delete result.path;
         }
         return result;
+    }
+    else {
+        (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.notice)(`🔎 config: ${config} not found`);
     }
     return {};
 }
@@ -2566,7 +2575,9 @@ async function Comment(githubClient, markdownReport, clones) {
     }
     markdown += '</details>\n';
     const message = `❌ DUPLICATED CODE FOUND \n\n${report}\n\n ${markdown}`;
-    return await _git__WEBPACK_IMPORTED_MODULE_8__/* .comment */ .UI(githubClient, message);
+    // save to file
+    fs__WEBPACK_IMPORTED_MODULE_3__.writeFileSync(markdownReport, message);
+    return await _git__WEBPACK_IMPORTED_MODULE_9__/* .comment */ .UI(githubClient, message);
 }
 function toGithubLink(path, cwd, range) {
     const main = path.replace(`${cwd}/`, '');
