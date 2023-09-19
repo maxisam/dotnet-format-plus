@@ -2516,7 +2516,11 @@ function readConfig(config, workspace, defaultConfig) {
     }
     if (workspaceConfigExists) {
         resultConfigPath = workspaceConfig;
-        resultData = { ...resultData, ...readJSONSync(workspaceConfig) };
+        const workspaceConfigData = readJSONSync(workspaceConfig);
+        for (const key in resultData) {
+            mergeArrayProps(workspaceConfigData, resultData, key);
+        }
+        resultData = { ...resultData, ...workspaceConfigData };
     }
     if (resultConfigPath) {
         const result = { config: resultConfigPath, ...resultData };
@@ -2525,6 +2529,14 @@ function readConfig(config, workspace, defaultConfig) {
     }
     (0,core.warning)(`🔎 config: ${config} not found`);
     return {};
+}
+function mergeArrayProps(newConfig, origConfig, prop) {
+    if (Array.isArray(newConfig[prop]) && Array.isArray(origConfig[prop])) {
+        newConfig[prop] = [...newConfig[prop], ...origConfig[prop]];
+    }
+    else if (!newConfig[prop] && Array.isArray(origConfig[prop])) {
+        newConfig[prop] = origConfig[prop];
+    }
 }
 
 ;// CONCATENATED MODULE: ./lib/duplicated.js

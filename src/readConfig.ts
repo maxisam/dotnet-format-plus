@@ -35,9 +35,12 @@ export function readConfig(config: string, workspace: string, defaultConfig: str
     }
     if (workspaceConfigExists) {
         resultConfigPath = workspaceConfig;
-        resultData = { ...resultData, ...readJSONSync(workspaceConfig) };
+        const workspaceConfigData = readJSONSync(workspaceConfig);
+        for (const key in resultData) {
+            mergeArrayProps(workspaceConfigData, resultData, key as keyof IOptions);
+        }
+        resultData = { ...resultData, ...workspaceConfigData };
     }
-
     if (resultConfigPath) {
         const result = { config: resultConfigPath, ...resultData };
         inspect(result);
@@ -46,4 +49,12 @@ export function readConfig(config: string, workspace: string, defaultConfig: str
 
     warning(`🔎 config: ${config} not found`);
     return {};
+}
+
+function mergeArrayProps(newConfig: Partial<IOptions>, origConfig: Partial<IOptions>, prop: keyof IOptions): void {
+    if (Array.isArray(newConfig[prop]) && Array.isArray(origConfig[prop])) {
+        newConfig[prop] = [...(newConfig[prop] as string[]), ...(origConfig[prop] as string[])];
+    } else if (!newConfig[prop] && Array.isArray(origConfig[prop])) {
+        newConfig[prop] = origConfig[prop];
+    }
 }

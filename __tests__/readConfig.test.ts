@@ -22,13 +22,15 @@ describe('readConfig', () => {
     it('should read and merge config from both configFile and workspaceConfig', () => {
         (fs.existsSync as jest.Mock).mockReturnValueOnce(true).mockReturnValueOnce(true);
         (fs.readFileSync as jest.Mock)
-            .mockReturnValueOnce(JSON.stringify({ setting1: 'value1' }))
-            .mockReturnValueOnce(JSON.stringify({ setting2: 'value2' }));
+            .mockReturnValueOnce(JSON.stringify({ setting1: 'value1', array: ['item1'] }))
+            .mockReturnValueOnce(JSON.stringify({ setting2: 'value2', array: ['item2'] }));
         const result = readConfig('mockConfigPath', 'mockWorkspacePath', '.jscpd.json');
         expect(result).toEqual({
             config: resolve('mockWorkspacePath', 'mockConfigPath'),
             setting1: 'value1',
-            setting2: 'value2'
+            setting2: 'value2',
+            // the order of the array items is flipped because the workspaceConfig is merged last
+            array: ['item2', 'item1']
         });
     });
 
