@@ -2480,7 +2480,8 @@ function toGithubLink(path, cwd) {
 const REPORT_ARTIFACT_NAME = 'jscpd-report';
 async function duplicatedCheck(workspace, jscpdConfigPath, githubClient) {
     const cwd = process.cwd();
-    const clones = await jscpdCheck(workspace, jscpdConfigPath);
+    const path = checkWorkspace(workspace);
+    const clones = await jscpdCheck(path, jscpdConfigPath);
     if (clones.length > 0) {
         (0,console__WEBPACK_IMPORTED_MODULE_1__.error)('❌ DUPLICATED CODE FOUND');
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.notice)(clones.join('\n'));
@@ -2526,6 +2527,15 @@ function readConfig(config) {
         return result;
     }
     return {};
+}
+function checkWorkspace(workspace) {
+    //check if workspace path is a file
+    const isFile = fs__WEBPACK_IMPORTED_MODULE_2__.existsSync(workspace) && fs__WEBPACK_IMPORTED_MODULE_2__.lstatSync(workspace).isFile();
+    if (isFile) {
+        // if it is a file, get the directory
+        return workspace.substring(0, workspace.lastIndexOf('/'));
+    }
+    return workspace;
 }
 
 

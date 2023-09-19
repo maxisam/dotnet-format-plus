@@ -12,7 +12,8 @@ export const REPORT_ARTIFACT_NAME = 'jscpd-report';
 
 export async function duplicatedCheck(workspace: string, jscpdConfigPath: string, githubClient: InstanceType<typeof Octokit>): Promise<void> {
   const cwd = process.cwd();
-  const clones = await jscpdCheck(workspace, jscpdConfigPath);
+  const path = checkWorkspace(workspace);
+  const clones = await jscpdCheck(path, jscpdConfigPath);
   if (clones.length > 0) {
     error('❌ DUPLICATED CODE FOUND');
     notice(clones.join('\n'));
@@ -60,4 +61,13 @@ function readConfig(config: string): Partial<IOptions> {
     return result;
   }
   return {};
+}
+function checkWorkspace(workspace: string): string {
+  //check if workspace path is a file
+  const isFile = fs.existsSync(workspace) && fs.lstatSync(workspace).isFile();
+  if (isFile) {
+    // if it is a file, get the directory
+    return workspace.substring(0, workspace.lastIndexOf('/'));
+  }
+  return workspace;
 }
