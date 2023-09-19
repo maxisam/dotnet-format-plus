@@ -2422,6 +2422,9 @@ function generateReport(reports) {
         const reportJson = JSON.parse(fs__WEBPACK_IMPORTED_MODULE_2__.readFileSync(report, 'utf8'));
         markdownReport += generateMarkdownReport(reportJson, fileName.toLocaleUpperCase());
     }
+    if (!markdownReport) {
+        return '';
+    }
     return `✅ Formatting succeeded\n\n ${markdownReport}`;
 }
 async function nugetRestore(nugetConfigPath, workspace) {
@@ -2892,17 +2895,24 @@ async function run() {
         }
         const reportFiles = _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .getReportFiles */ .xd();
         await _git__WEBPACK_IMPORTED_MODULE_6__/* .UploadReportToArtifacts */ .BC(reportFiles, _common__WEBPACK_IMPORTED_MODULE_3__/* .REPORT_ARTIFACT_NAME */ .GB);
-        await setOutput(options.dryRun);
         if (finalFormatResult && _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.eventName === 'pull_request' && !options.dryRun) {
-            await _git__WEBPACK_IMPORTED_MODULE_6__/* .comment */ .UI(githubClient, _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .generateReport */ .OE(reportFiles));
-            const isRemoved = await _common__WEBPACK_IMPORTED_MODULE_3__/* .RemoveReportFiles */ .VO();
-            const isInit = isRemoved && (await _git__WEBPACK_IMPORTED_MODULE_6__/* .init */ .S1(process.cwd(), inputs.commitUsername, inputs.commitUserEmail));
-            const currentBranch = _common__WEBPACK_IMPORTED_MODULE_3__/* .getCurrentBranch */ .UJ();
-            const isCommit = isInit && (await _git__WEBPACK_IMPORTED_MODULE_6__/* .commit */ .th(process.cwd(), inputs.commitMessage, currentBranch));
-            if (isCommit) {
-                await _git__WEBPACK_IMPORTED_MODULE_6__/* .push */ .VF(currentBranch);
+            const message = _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .generateReport */ .OE(reportFiles);
+            // means that there are changes
+            if (message) {
+                await _git__WEBPACK_IMPORTED_MODULE_6__/* .comment */ .UI(githubClient, message);
+                const isRemoved = await _common__WEBPACK_IMPORTED_MODULE_3__/* .RemoveReportFiles */ .VO();
+                const isInit = isRemoved && (await _git__WEBPACK_IMPORTED_MODULE_6__/* .init */ .S1(process.cwd(), inputs.commitUsername, inputs.commitUserEmail));
+                const currentBranch = _common__WEBPACK_IMPORTED_MODULE_3__/* .getCurrentBranch */ .UJ();
+                const isCommit = isInit && (await _git__WEBPACK_IMPORTED_MODULE_6__/* .commit */ .th(process.cwd(), inputs.commitMessage, currentBranch));
+                if (isCommit) {
+                    await _git__WEBPACK_IMPORTED_MODULE_6__/* .push */ .VF(currentBranch);
+                }
+            }
+            else {
+                _actions_core__WEBPACK_IMPORTED_MODULE_0__.notice('✅ NO CHANGES', _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .ANNOTATION_OPTIONS */ .xu);
             }
         }
+        await setOutput(options.dryRun);
         finalFormatResult
             ? _actions_core__WEBPACK_IMPORTED_MODULE_0__.notice('✅ DOTNET FORMAT SUCCESS', _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .ANNOTATION_OPTIONS */ .xu)
             : _actions_core__WEBPACK_IMPORTED_MODULE_0__.error('DOTNET FORMAT FAILED', _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .ANNOTATION_OPTIONS */ .xu);

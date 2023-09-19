@@ -39,17 +39,23 @@ async function run(): Promise<boolean> {
         }
         const reportFiles = dotnet.getReportFiles();
         await git.UploadReportToArtifacts(reportFiles, REPORT_ARTIFACT_NAME);
-        await setOutput(options.dryRun);
         if (finalFormatResult && context.eventName === 'pull_request' && !options.dryRun) {
-            await git.comment(githubClient, dotnet.generateReport(reportFiles));
-            const isRemoved = await Common.RemoveReportFiles();
-            const isInit = isRemoved && (await git.init(process.cwd(), inputs.commitUsername, inputs.commitUserEmail));
-            const currentBranch = Common.getCurrentBranch();
-            const isCommit = isInit && (await git.commit(process.cwd(), inputs.commitMessage, currentBranch));
-            if (isCommit) {
-                await git.push(currentBranch);
+            const message = dotnet.generateReport(reportFiles);
+            // means that there are changes
+            if (message) {
+                await git.comment(githubClient, message);
+                const isRemoved = await Common.RemoveReportFiles();
+                const isInit = isRemoved && (await git.init(process.cwd(), inputs.commitUsername, inputs.commitUserEmail));
+                const currentBranch = Common.getCurrentBranch();
+                const isCommit = isInit && (await git.commit(process.cwd(), inputs.commitMessage, currentBranch));
+                if (isCommit) {
+                    await git.push(currentBranch);
+                }
+            } else {
+                core.notice('✅ NO CHANGES', dotnet.ANNOTATION_OPTIONS);
             }
         }
+        await setOutput(options.dryRun);
         finalFormatResult
             ? core.notice('✅ DOTNET FORMAT SUCCESS', dotnet.ANNOTATION_OPTIONS)
             : core.error('DOTNET FORMAT FAILED', dotnet.ANNOTATION_OPTIONS);

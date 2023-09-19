@@ -120,6 +120,9 @@ export function generateReport(reports: string[]): string {
         const reportJson = JSON.parse(fs.readFileSync(report, 'utf8')) as ReportItem[];
         markdownReport += generateMarkdownReport(reportJson, fileName.toLocaleUpperCase());
     }
+    if (!markdownReport) {
+        return '';
+    }
     return `✅ Formatting succeeded\n\n ${markdownReport}`;
 }
 
