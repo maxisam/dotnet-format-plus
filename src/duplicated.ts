@@ -1,12 +1,13 @@
 import { error, info, notice, setFailed, setOutput, warning } from '@actions/core';
 import { context } from '@actions/github';
-import { IClone } from '@jscpd/core';
+import { IClone, IOptions } from '@jscpd/core';
 import { Octokit } from '@octokit/rest';
 import * as fs from 'fs';
 import { detectClones } from 'jscpd';
 import { inspect } from 'util';
 import { execute } from './execute';
 import * as git from './git';
+import { IJsonReport } from './modals';
 import { readConfig } from './readConfig';
 export const REPORT_ARTIFACT_NAME = 'jscpd-report';
 
@@ -21,43 +22,40 @@ export async function duplicatedCheck(
 ): Promise<void> {
     const cwd = process.cwd();
     const path = checkWorkspace(workspace);
-    const clones = await jscpdCheck(path, jscpdConfigPath);
+    const options = getOptions(jscpdConfigPath, path, cwd);
+    const clones = await detectClones(options);
     if (clones.length > 0) {
-        jscpdCheckAsError ? setFailed('❌ DUPLICATED CODE FOUND') : warning('❌ DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
-        setOutput('hasDuplicates', 'true');
-        showAnnotation(clones, cwd, jscpdCheckAsError);
         const reportFiles = getReportFiles(cwd);
         const markdownReport = reportFiles.find(file => file.endsWith('.md')) as string;
+        const jsonReport = reportFiles.find(file => file.endsWith('.json')) as string;
         const message = await Comment(githubClient, markdownReport, clones);
         fs.writeFileSync(markdownReport, message);
-        await git.UploadReportToArtifacts([markdownReport], REPORT_ARTIFACT_NAME);
+        await git.UploadReportToArtifacts([markdownReport, jsonReport], REPORT_ARTIFACT_NAME);
+        const isOverThreshold = checkThreshold(jsonReport, options.threshold || 0);
+        jscpdCheckAsError && isOverThreshold ? setFailed('❌ DUPLICATED CODE FOUND') : warning('DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
+        showAnnotation(clones, cwd, jscpdCheckAsError && isOverThreshold);
         await execute(`rm -rf ${cwd}/${REPORT_ARTIFACT_NAME}`);
+        setOutput('hasDuplicates', `${isOverThreshold}`);
     } else {
         setOutput('hasDuplicates', 'false');
         notice('✅ NO DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
     }
 }
 
-export async function jscpdCheck(workspace: string, jscpdConfigPath: string): Promise<IClone[]> {
-    const cwd = process.cwd();
-    // read config from file
+function getOptions(jscpdConfigPath: string, workspace: string, cwd: string): Partial<IOptions> {
     const configOptions = readConfig(jscpdConfigPath, workspace, '.jscpd.json');
     const defaultOptions = {
         path: [`${workspace}`],
-        reporters: ['markdown', 'consoleFull'],
+        reporters: ['markdown', 'json', 'consoleFull'],
         output: `${cwd}/${REPORT_ARTIFACT_NAME}`
     };
     const options = { ...configOptions, ...defaultOptions };
     info(`loaded options: ${inspect(options)}`);
-    const clones = await detectClones(options);
-
-    return clones;
+    return options;
 }
 
 function getReportFiles(cwd: string): string[] {
-    const files = fs.readdirSync(`${cwd}/${REPORT_ARTIFACT_NAME}`, {
-        recursive: true
-    }) as string[];
+    const files = fs.readdirSync(`${cwd}/${REPORT_ARTIFACT_NAME}`);
     const filePaths = files.map(file => `${cwd}/${REPORT_ARTIFACT_NAME}/${file}`);
     info(`reportFiles: ${filePaths.join(',')}`);
     return filePaths;
@@ -74,8 +72,8 @@ function checkWorkspace(workspace: string): string {
     return workspace;
 }
 
-function showAnnotation(clones: IClone[], cwd: string, jscpdCheckAsError: boolean): void {
-    const show = jscpdCheckAsError ? error : warning;
+function showAnnotation(clones: IClone[], cwd: string, isError: boolean): void {
+    const show = isError ? error : warning;
     for (const clone of clones) {
         show(
             `${clone.duplicationA.sourceId.replace(cwd, '')} (${clone.duplicationA.start.line}-${clone.duplicationA.end.line})
@@ -110,4 +108,14 @@ async function Comment(githubClient: InstanceType<typeof Octokit>, markdownRepor
 function toGithubLink(path: string, cwd: string, range: [number, number]): string {
     const main = path.replace(`${cwd}/`, '');
     return `[${main}#L${range[0]}-L${range[1]}](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/${context.sha}/${main}#L${range[0]}-L${range[1]})`;
+}
+
+function checkThreshold(jsonReport: string, threshold: number): boolean {
+    // read json report
+    const report = JSON.parse(fs.readFileSync(jsonReport, 'utf8')) as IJsonReport;
+    if (report.statistics.total.percentage > threshold) {
+        error(`DUPLICATED CODE FOUND ${report.statistics.total.percentage}% IS OVER THRESHOLD ${threshold}%`, ANNOTATION_OPTIONS);
+        return true;
+    }
+    return false;
 }

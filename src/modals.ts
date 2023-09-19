@@ -1,3 +1,5 @@
+import { IBlamedLines, IStatistic, ITokenLocation } from '@jscpd/core';
+
 export enum INPUTS {
     authToken = 'authToken',
     action = 'action',
@@ -83,4 +85,32 @@ export interface ReportItem {
     FileName: string;
     FilePath: string;
     FileChanges: FileChange[];
+}
+
+export interface IDuplication {
+    format: string;
+    lines: number;
+    tokens: number;
+    firstFile: {
+        name: string;
+        start: number;
+        end: number;
+        startLoc: ITokenLocation;
+        endLoc: ITokenLocation;
+        blame?: IBlamedLines;
+    };
+    secondFile: {
+        name: string;
+        start: number;
+        end: number;
+        startLoc: ITokenLocation;
+        endLoc: ITokenLocation;
+        blame?: IBlamedLines;
+    };
+    fragment: string;
+}
+
+export interface IJsonReport {
+    duplicates: IDuplication[];
+    statistics: IStatistic;
 }
