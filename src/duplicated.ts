@@ -99,8 +99,8 @@ async function Comment(githubClient: InstanceType<typeof Octokit>, markdownRepor
     markdown += ` <summary> JSCPD Details </summary>\n\n`;
     for (const c of clones) {
         markdown += `- **${c.duplicationA.sourceId.split('/').pop()}** & **${c.duplicationB.sourceId.split('/').pop()}**\n`;
-        markdown += `  - ${toGithubLink(c.duplicationA.sourceId, cwd, c.duplicationA.range)}\n`;
-        markdown += `  - ${toGithubLink(c.duplicationB.sourceId, cwd, c.duplicationB.range)}\n`;
+        markdown += `  - ${toGithubLink(c.duplicationA.sourceId, cwd, [c.duplicationA.start.line, c.duplicationA.end.line])}\n`;
+        markdown += `  - ${toGithubLink(c.duplicationB.sourceId, cwd, [c.duplicationB.start.line, c.duplicationB.end.line])}\n`;
         markdown += '\n';
     }
     markdown += '</details>\n';

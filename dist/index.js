@@ -2560,8 +2560,8 @@ async function Comment(githubClient, markdownReport, clones) {
     markdown += ` <summary> JSCPD Details </summary>\n\n`;
     for (const c of clones) {
         markdown += `- **${c.duplicationA.sourceId.split('/').pop()}** & **${c.duplicationB.sourceId.split('/').pop()}**\n`;
-        markdown += `  - ${toGithubLink(c.duplicationA.sourceId, cwd, c.duplicationA.range)}\n`;
-        markdown += `  - ${toGithubLink(c.duplicationB.sourceId, cwd, c.duplicationB.range)}\n`;
+        markdown += `  - ${toGithubLink(c.duplicationA.sourceId, cwd, [c.duplicationA.start.line, c.duplicationA.end.line])}\n`;
+        markdown += `  - ${toGithubLink(c.duplicationB.sourceId, cwd, [c.duplicationB.start.line, c.duplicationB.end.line])}\n`;
         markdown += '\n';
     }
     markdown += '</details>\n';
@@ -2765,6 +2765,10 @@ async function handleRejectedPush(branch) {
 // add report to github action artifacts
 async function UploadReportToArtifacts(reports, artifactName) {
     const artifactClient = _actions_artifact__WEBPACK_IMPORTED_MODULE_0__/* .create */ .U();
+    if (reports.length === 0) {
+        (0,_actions_core__WEBPACK_IMPORTED_MODULE_1__.info)(`No reports found`);
+        return;
+    }
     const uploadResponse = await artifactClient.uploadArtifact(artifactName, reports, process.cwd(), {
         continueOnError: true
     });

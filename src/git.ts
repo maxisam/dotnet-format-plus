@@ -165,7 +165,10 @@ async function handleRejectedPush(branch: string): Promise<void> {
 // add report to github action artifacts
 export async function UploadReportToArtifacts(reports: string[], artifactName: string): Promise<void> {
     const artifactClient = artifact.create();
-
+    if (reports.length === 0) {
+        info(`No reports found`);
+        return;
+    }
     const uploadResponse = await artifactClient.uploadArtifact(artifactName, reports, process.cwd(), {
         continueOnError: true
     });
