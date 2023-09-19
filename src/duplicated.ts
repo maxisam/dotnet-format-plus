@@ -4,6 +4,7 @@ import { IClone } from '@jscpd/core';
 import { Octokit } from '@octokit/rest';
 import * as fs from 'fs';
 import { detectClones } from 'jscpd';
+import { inspect } from 'util';
 import { execute } from './execute';
 import * as git from './git';
 import { readConfig } from './readConfig';
@@ -47,6 +48,7 @@ export async function jscpdCheck(workspace: string, jscpdConfigPath: string): Pr
         output: `${cwd}/${REPORT_ARTIFACT_NAME}`
     };
     const options = { ...configOptions, ...defaultOptions };
+    info(`loaded options: ${inspect(options)}`);
     const clones = await detectClones(options);
 
     return clones;

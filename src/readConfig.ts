@@ -1,4 +1,4 @@
-import { warning } from '@actions/core';
+import { info, warning } from '@actions/core';
 import { IOptions } from '@jscpd/core';
 import * as fs from 'fs';
 import { resolve } from 'path';
@@ -43,7 +43,7 @@ export function readConfig(config: string, workspace: string, defaultConfig: str
     }
     if (resultConfigPath) {
         const result = { config: resultConfigPath, ...resultData };
-        inspect(result);
+        info(`🔎 loaded config: ${inspect(result)}`);
         return result;
     }
 

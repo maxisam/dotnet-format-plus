@@ -2476,14 +2476,14 @@ var github = __nccwpck_require__(95438);
 var external_fs_ = __nccwpck_require__(57147);
 // EXTERNAL MODULE: ./node_modules/jscpd/dist/index.js
 var dist = __nccwpck_require__(84849);
+// EXTERNAL MODULE: external "util"
+var external_util_ = __nccwpck_require__(73837);
 // EXTERNAL MODULE: ./lib/execute.js
 var execute = __nccwpck_require__(3532);
 // EXTERNAL MODULE: ./lib/git.js + 1 modules
 var git = __nccwpck_require__(98713);
 // EXTERNAL MODULE: external "path"
 var external_path_ = __nccwpck_require__(71017);
-// EXTERNAL MODULE: external "util"
-var external_util_ = __nccwpck_require__(73837);
 ;// CONCATENATED MODULE: ./lib/readConfig.js
 
 
@@ -2524,7 +2524,7 @@ function readConfig(config, workspace, defaultConfig) {
     }
     if (resultConfigPath) {
         const result = { config: resultConfigPath, ...resultData };
-        (0,external_util_.inspect)(result);
+        (0,core.info)(`🔎 loaded config: ${(0,external_util_.inspect)(result)}`);
         return result;
     }
     (0,core.warning)(`🔎 config: ${config} not found`);
@@ -2540,6 +2540,7 @@ function mergeArrayProps(newConfig, origConfig, prop) {
 }
 
 ;// CONCATENATED MODULE: ./lib/duplicated.js
+
 
 
 
@@ -2581,6 +2582,7 @@ async function jscpdCheck(workspace, jscpdConfigPath) {
         output: `${cwd}/${REPORT_ARTIFACT_NAME}`
     };
     const options = { ...configOptions, ...defaultOptions };
+    (0,core.info)(`loaded options: ${(0,external_util_.inspect)(options)}`);
     const clones = await (0,dist.detectClones)(options);
     return clones;
 }
