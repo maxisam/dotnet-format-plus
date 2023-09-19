@@ -2500,7 +2500,7 @@ async function jscpdCheck(workspace, jscpdConfigPath) {
     // read config from file
     const configOptions = readConfig(jscpdConfigPath);
     const defaultOptions = {
-        path: [`${cwd}/${workspace}`],
+        path: [`${workspace}`],
         reporters: ['html', 'markdown', 'consoleFull'],
         reportersOptions: {
             html: {
@@ -2529,6 +2529,7 @@ function readConfig(config) {
     return {};
 }
 function checkWorkspace(workspace) {
+    (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`workspace: ${workspace}`);
     //check if workspace path is a file
     const isFile = fs__WEBPACK_IMPORTED_MODULE_2__.existsSync(workspace) && fs__WEBPACK_IMPORTED_MODULE_2__.lstatSync(workspace).isFile();
     if (isFile) {
