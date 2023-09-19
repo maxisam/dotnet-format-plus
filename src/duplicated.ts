@@ -21,8 +21,9 @@ export async function duplicatedCheck(workspace: string, jscpdConfigPath: string
         showNotice(clones, cwd);
         const reportFiles = getReportFiles(cwd);
         const markdownReport = reportFiles.find(file => file.endsWith('.md')) as string;
+        const message = await Comment(githubClient, markdownReport, clones);
+        fs.writeFileSync(markdownReport, message);
         await git.UploadReportToArtifacts([markdownReport], REPORT_ARTIFACT_NAME);
-        await Comment(githubClient, markdownReport, clones);
         await execute(`rm -rf ${cwd}/${REPORT_ARTIFACT_NAME}`);
     } else {
         info('✅✅✅✅✅ NO DUPLICATED CODE FOUND ✅✅✅✅✅');
@@ -35,7 +36,7 @@ export async function jscpdCheck(workspace: string, jscpdConfigPath: string): Pr
     const configOptions = readConfig(jscpdConfigPath);
     const defaultOptions = {
         path: [`${workspace}`],
-        reporters: ['html', 'markdown', 'consoleFull'],
+        reporters: ['markdown', 'consoleFull'],
         output: `${cwd}/${REPORT_ARTIFACT_NAME}`
     };
     const options = { ...configOptions, ...defaultOptions };
@@ -98,7 +99,7 @@ function showNotice(clones: IClone[], cwd: string): void {
     }
 }
 
-async function Comment(githubClient: InstanceType<typeof Octokit>, markdownReport: string, clones: IClone[]): Promise<boolean> {
+async function Comment(githubClient: InstanceType<typeof Octokit>, markdownReport: string, clones: IClone[]): Promise<string> {
     const report = fs.readFileSync(markdownReport, 'utf8');
     const cwd = process.cwd();
     let markdown = '<details>\n';
@@ -111,9 +112,8 @@ async function Comment(githubClient: InstanceType<typeof Octokit>, markdownRepor
     }
     markdown += '</details>\n';
     const message = `❌ DUPLICATED CODE FOUND \n\n${report}\n\n ${markdown}`;
-    // save to file
-    fs.writeFileSync(markdownReport, message);
-    return await git.comment(githubClient, message);
+    await git.comment(githubClient, message);
+    return message;
 }
 
 function toGithubLink(path: string, cwd: string, range: [number, number]): string {
