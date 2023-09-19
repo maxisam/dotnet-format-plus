@@ -2484,12 +2484,13 @@ async function duplicatedCheck(workspace, jscpdConfigPath, githubClient) {
     const clones = await jscpdCheck(path, jscpdConfigPath);
     if (clones.length > 0) {
         (0,console__WEBPACK_IMPORTED_MODULE_1__.error)('❌ DUPLICATED CODE FOUND');
-        (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.notice)(clones.join('\n'));
-        const reportFiles = [`${cwd}/${REPORT_ARTIFACT_NAME}.md`, `${cwd}/${REPORT_ARTIFACT_NAME}.html`];
-        await _git__WEBPACK_IMPORTED_MODULE_7__/* .UploadReportToArtifacts */ .BC(reportFiles, REPORT_ARTIFACT_NAME);
-        const report = fs__WEBPACK_IMPORTED_MODULE_2__.readFileSync(`${cwd}/${REPORT_ARTIFACT_NAME}.md`, 'utf8');
+        showNotice(clones);
+        const reportFiles = getReportFiles(cwd);
+        const markdownReport = reportFiles.find(file => file.endsWith('.md'));
+        await _git__WEBPACK_IMPORTED_MODULE_7__/* .UploadReportToArtifacts */ .BC([markdownReport], REPORT_ARTIFACT_NAME);
+        const report = fs__WEBPACK_IMPORTED_MODULE_2__.readFileSync(markdownReport, 'utf8');
         await _git__WEBPACK_IMPORTED_MODULE_7__/* .comment */ .UI(githubClient, `❌ DUPLICATED CODE FOUND \n\n${report}`);
-        await (0,_execute__WEBPACK_IMPORTED_MODULE_6__/* .execute */ .h)(`rm -f ${cwd}/${REPORT_ARTIFACT_NAME}.*`);
+        await (0,_execute__WEBPACK_IMPORTED_MODULE_6__/* .execute */ .h)(`rm -rf ${cwd}/${REPORT_ARTIFACT_NAME}`);
     }
     else {
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)('✅✅✅✅✅ NO DUPLICATED CODE FOUND ✅✅✅✅✅');
@@ -2502,14 +2503,7 @@ async function jscpdCheck(workspace, jscpdConfigPath) {
     const defaultOptions = {
         path: [`${workspace}`],
         reporters: ['html', 'markdown', 'consoleFull'],
-        reportersOptions: {
-            html: {
-                output: `${cwd}/${REPORT_ARTIFACT_NAME}.html`
-            },
-            markdown: {
-                output: `${cwd}/${REPORT_ARTIFACT_NAME}.md`
-            }
-        }
+        output: `${cwd}/${REPORT_ARTIFACT_NAME}`
     };
     const options = { ...configOptions, ...defaultOptions };
     const clones = await (0,jscpd__WEBPACK_IMPORTED_MODULE_4__.detectClones)(options);
@@ -2528,6 +2522,14 @@ function readConfig(config) {
     }
     return {};
 }
+function getReportFiles(cwd) {
+    const files = fs__WEBPACK_IMPORTED_MODULE_2__.readdirSync(`${cwd}/${REPORT_ARTIFACT_NAME}`, {
+        recursive: true
+    });
+    const filePaths = files.map(file => `${cwd}/${REPORT_ARTIFACT_NAME}/${file}`);
+    (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`reportFiles: ${filePaths.join(',')}`);
+    return filePaths;
+}
 function checkWorkspace(workspace) {
     (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`workspace: ${workspace}`);
     //check if workspace path is a file
@@ -2537,6 +2539,17 @@ function checkWorkspace(workspace) {
         return workspace.substring(0, workspace.lastIndexOf('/'));
     }
     return workspace;
+}
+function showNotice(clones) {
+    for (const clone of clones) {
+        (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.notice)(`${clone.duplicationA.sourceId} (${clone.duplicationA.start.line}-${clone.duplicationA.end.line}) 
+            and ${clone.duplicationB.sourceId} (${clone.duplicationB.start.line}-${clone.duplicationB.end.line})`, {
+            title: '❌ Duplicated code',
+            file: clone.duplicationA.sourceId,
+            startLine: clone.duplicationA.start.line,
+            endLine: clone.duplicationA.end.line
+        });
+    }
 }
 
 

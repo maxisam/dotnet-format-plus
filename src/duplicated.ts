@@ -16,12 +16,13 @@ export async function duplicatedCheck(workspace: string, jscpdConfigPath: string
     const clones = await jscpdCheck(path, jscpdConfigPath);
     if (clones.length > 0) {
         error('❌ DUPLICATED CODE FOUND');
-        notice(clones.join('\n'));
-        const reportFiles = [`${cwd}/${REPORT_ARTIFACT_NAME}.md`, `${cwd}/${REPORT_ARTIFACT_NAME}.html`];
-        await git.UploadReportToArtifacts(reportFiles, REPORT_ARTIFACT_NAME);
-        const report = fs.readFileSync(`${cwd}/${REPORT_ARTIFACT_NAME}.md`, 'utf8');
+        showNotice(clones);
+        const reportFiles = getReportFiles(cwd);
+        const markdownReport = reportFiles.find(file => file.endsWith('.md')) as string;
+        await git.UploadReportToArtifacts([markdownReport], REPORT_ARTIFACT_NAME);
+        const report = fs.readFileSync(markdownReport, 'utf8');
         await git.comment(githubClient, `❌ DUPLICATED CODE FOUND \n\n${report}`);
-        await execute(`rm -f ${cwd}/${REPORT_ARTIFACT_NAME}.*`);
+        await execute(`rm -rf ${cwd}/${REPORT_ARTIFACT_NAME}`);
     } else {
         info('✅✅✅✅✅ NO DUPLICATED CODE FOUND ✅✅✅✅✅');
     }
@@ -34,14 +35,7 @@ export async function jscpdCheck(workspace: string, jscpdConfigPath: string): Pr
     const defaultOptions = {
         path: [`${workspace}`],
         reporters: ['html', 'markdown', 'consoleFull'],
-        reportersOptions: {
-            html: {
-                output: `${cwd}/${REPORT_ARTIFACT_NAME}.html`
-            },
-            markdown: {
-                output: `${cwd}/${REPORT_ARTIFACT_NAME}.md`
-            }
-        }
+        output: `${cwd}/${REPORT_ARTIFACT_NAME}`
     };
     const options = { ...configOptions, ...defaultOptions };
     const clones = await detectClones(options);
@@ -62,6 +56,16 @@ function readConfig(config: string): Partial<IOptions> {
     }
     return {};
 }
+
+function getReportFiles(cwd: string): string[] {
+    const files = fs.readdirSync(`${cwd}/${REPORT_ARTIFACT_NAME}`, {
+        recursive: true
+    }) as string[];
+    const filePaths = files.map(file => `${cwd}/${REPORT_ARTIFACT_NAME}/${file}`);
+    info(`reportFiles: ${filePaths.join(',')}`);
+    return filePaths;
+}
+
 function checkWorkspace(workspace: string): string {
     info(`workspace: ${workspace}`);
     //check if workspace path is a file
@@ -71,4 +75,18 @@ function checkWorkspace(workspace: string): string {
         return workspace.substring(0, workspace.lastIndexOf('/'));
     }
     return workspace;
+}
+function showNotice(clones: IClone[]): void {
+    for (const clone of clones) {
+        notice(
+            `${clone.duplicationA.sourceId} (${clone.duplicationA.start.line}-${clone.duplicationA.end.line}) 
+            and ${clone.duplicationB.sourceId} (${clone.duplicationB.start.line}-${clone.duplicationB.end.line})`,
+            {
+                title: '❌ Duplicated code',
+                file: clone.duplicationA.sourceId,
+                startLine: clone.duplicationA.start.line,
+                endLine: clone.duplicationA.end.line
+            }
+        );
+    }
 }
