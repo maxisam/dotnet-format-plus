@@ -2463,10 +2463,10 @@ function toGithubLink(path, cwd) {
 
 // EXPORTS
 __nccwpck_require__.d(__webpack_exports__, {
-  "O8": () => (/* binding */ duplicatedCheck)
+  "O": () => (/* binding */ duplicatedCheck)
 });
 
-// UNUSED EXPORTS: REPORT_ARTIFACT_NAME, jscpdCheck
+// UNUSED EXPORTS: REPORT_ARTIFACT_NAME
 
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
 var core = __nccwpck_require__(42186);
@@ -2555,41 +2555,39 @@ const ANNOTATION_OPTIONS = {
 async function duplicatedCheck(workspace, jscpdConfigPath, jscpdCheckAsError, githubClient) {
     const cwd = process.cwd();
     const path = checkWorkspace(workspace);
-    const clones = await jscpdCheck(path, jscpdConfigPath);
+    const options = getOptions(jscpdConfigPath, path, cwd);
+    const clones = await (0,dist.detectClones)(options);
     if (clones.length > 0) {
         jscpdCheckAsError ? (0,core.setFailed)('❌ DUPLICATED CODE FOUND') : (0,core.warning)('❌ DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
-        (0,core.setOutput)('hasDuplicates', 'true');
         showAnnotation(clones, cwd, jscpdCheckAsError);
         const reportFiles = getReportFiles(cwd);
         const markdownReport = reportFiles.find(file => file.endsWith('.md'));
+        const jsonReport = reportFiles.find(file => file.endsWith('.json'));
         const message = await Comment(githubClient, markdownReport, clones);
         external_fs_.writeFileSync(markdownReport, message);
-        await git/* UploadReportToArtifacts */.BC([markdownReport], REPORT_ARTIFACT_NAME);
+        await git/* UploadReportToArtifacts */.BC([markdownReport, jsonReport], REPORT_ARTIFACT_NAME);
+        const isOverThreshold = checkThreshold(jsonReport, options.threshold || 0);
         await (0,execute/* execute */.h)(`rm -rf ${cwd}/${REPORT_ARTIFACT_NAME}`);
+        (0,core.setOutput)('hasDuplicates', `${isOverThreshold}`);
     }
     else {
         (0,core.setOutput)('hasDuplicates', 'false');
         (0,core.notice)('✅ NO DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
     }
 }
-async function jscpdCheck(workspace, jscpdConfigPath) {
-    const cwd = process.cwd();
-    // read config from file
+function getOptions(jscpdConfigPath, workspace, cwd) {
     const configOptions = readConfig(jscpdConfigPath, workspace, '.jscpd.json');
     const defaultOptions = {
         path: [`${workspace}`],
-        reporters: ['markdown', 'consoleFull'],
+        reporters: ['markdown', 'json', 'consoleFull'],
         output: `${cwd}/${REPORT_ARTIFACT_NAME}`
     };
     const options = { ...configOptions, ...defaultOptions };
     (0,core.info)(`loaded options: ${(0,external_util_.inspect)(options)}`);
-    const clones = await (0,dist.detectClones)(options);
-    return clones;
+    return options;
 }
 function getReportFiles(cwd) {
-    const files = external_fs_.readdirSync(`${cwd}/${REPORT_ARTIFACT_NAME}`, {
-        recursive: true
-    });
+    const files = external_fs_.readdirSync(`${cwd}/${REPORT_ARTIFACT_NAME}`);
     const filePaths = files.map(file => `${cwd}/${REPORT_ARTIFACT_NAME}/${file}`);
     (0,core.info)(`reportFiles: ${filePaths.join(',')}`);
     return filePaths;
@@ -2635,6 +2633,15 @@ async function Comment(githubClient, markdownReport, clones) {
 function toGithubLink(path, cwd, range) {
     const main = path.replace(`${cwd}/`, '');
     return `[${main}#L${range[0]}-L${range[1]}](https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/blob/${github.context.sha}/${main}#L${range[0]}-L${range[1]})`;
+}
+function checkThreshold(jsonReport, threshold) {
+    // read json report
+    const report = JSON.parse(external_fs_.readFileSync(jsonReport, 'utf8'));
+    if (report.statistics.total.percentage > threshold) {
+        (0,core.error)(`DUPLICATED CODE FOUND ${report.statistics.total.percentage}% IS OVER THRESHOLD ${threshold}%`, ANNOTATION_OPTIONS);
+        return true;
+    }
+    return false;
 }
 
 
@@ -2931,7 +2938,7 @@ async function run() {
             ? _actions_core__WEBPACK_IMPORTED_MODULE_0__.notice('✅ DOTNET FORMAT SUCCESS', _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .ANNOTATION_OPTIONS */ .xu)
             : _actions_core__WEBPACK_IMPORTED_MODULE_0__.error('DOTNET FORMAT FAILED', _dotnet__WEBPACK_IMPORTED_MODULE_4__/* .ANNOTATION_OPTIONS */ .xu);
         if (inputs.jscpdCheck) {
-            await (0,_duplicated__WEBPACK_IMPORTED_MODULE_5__/* .duplicatedCheck */ .O8)(inputs.workspace, inputs.jscpdConfigPath, inputs.jscpdCheckAsError, githubClient);
+            await (0,_duplicated__WEBPACK_IMPORTED_MODULE_5__/* .duplicatedCheck */ .O)(inputs.workspace, inputs.jscpdConfigPath, inputs.jscpdCheckAsError, githubClient);
         }
         return finalFormatResult;
     }
