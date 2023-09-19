@@ -1,4 +1,5 @@
 import { info, notice } from '@actions/core';
+import { context } from '@actions/github';
 import { IClone, IOptions } from '@jscpd/core';
 import { Octokit } from '@octokit/rest';
 import { error } from 'console';
@@ -16,12 +17,11 @@ export async function duplicatedCheck(workspace: string, jscpdConfigPath: string
     const clones = await jscpdCheck(path, jscpdConfigPath);
     if (clones.length > 0) {
         error('❌ DUPLICATED CODE FOUND');
-        showNotice(clones);
+        showNotice(clones, cwd);
         const reportFiles = getReportFiles(cwd);
         const markdownReport = reportFiles.find(file => file.endsWith('.md')) as string;
         await git.UploadReportToArtifacts([markdownReport], REPORT_ARTIFACT_NAME);
-        const report = fs.readFileSync(markdownReport, 'utf8');
-        await git.comment(githubClient, `❌ DUPLICATED CODE FOUND \n\n${report}`);
+        await Comment(githubClient, markdownReport, clones);
         await execute(`rm -rf ${cwd}/${REPORT_ARTIFACT_NAME}`);
     } else {
         info('✅✅✅✅✅ NO DUPLICATED CODE FOUND ✅✅✅✅✅');
@@ -76,11 +76,12 @@ function checkWorkspace(workspace: string): string {
     }
     return workspace;
 }
-function showNotice(clones: IClone[]): void {
+
+function showNotice(clones: IClone[], cwd: string): void {
     for (const clone of clones) {
         notice(
-            `${clone.duplicationA.sourceId} (${clone.duplicationA.start.line}-${clone.duplicationA.end.line}) 
-            and ${clone.duplicationB.sourceId} (${clone.duplicationB.start.line}-${clone.duplicationB.end.line})`,
+            `${clone.duplicationA.sourceId.replace(cwd, '')} (${clone.duplicationA.start.line}-${clone.duplicationA.end.line})
+            and ${clone.duplicationB.sourceId.replace(cwd, '')} (${clone.duplicationB.start.line}-${clone.duplicationB.end.line})`,
             {
                 title: '❌ Duplicated code',
                 file: clone.duplicationA.sourceId,
@@ -89,4 +90,25 @@ function showNotice(clones: IClone[]): void {
             }
         );
     }
+}
+
+async function Comment(githubClient: InstanceType<typeof Octokit>, markdownReport: string, clones: IClone[]): Promise<boolean> {
+    const report = fs.readFileSync(markdownReport, 'utf8');
+    const cwd = process.cwd();
+    let markdown = '<details>\n';
+    markdown += ` <summary> JSCPD Details </summary>\n\n`;
+    for (const c of clones) {
+        markdown += `- **${c.duplicationA.sourceId.split('/').pop()}** & **${c.duplicationB.sourceId.split('/').pop()}**\n`;
+        markdown += `  - ${toGithubLink(c.duplicationA.sourceId, cwd, c.duplicationA.range)}\n`;
+        markdown += `  - ${toGithubLink(c.duplicationB.sourceId, cwd, c.duplicationB.range)}\n`;
+        markdown += '\n';
+    }
+    markdown += '</details>\n';
+    const message = `❌ DUPLICATED CODE FOUND \n\n${report}\n\n ${markdown}`;
+    return await git.comment(githubClient, message);
+}
+
+function toGithubLink(path: string, cwd: string, range: [number, number]): string {
+    const main = path.replace(`${cwd}/`, '');
+    return `[${main}#L${range[0]}-L${range[1]}](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/${context.sha}/${main}#L${range[0]}-L${range[1]})`;
 }
