@@ -26,3 +26,6 @@ for (int i = 1; i <= 5; i++)
     sum += i;
 }
 Console.WriteLine(sum);
+Console.WriteLine(sum);
+Console.WriteLine(sum);
+Console.WriteLine(sum);
