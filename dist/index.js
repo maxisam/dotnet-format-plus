@@ -2558,8 +2558,6 @@ async function duplicatedCheck(workspace, jscpdConfigPath, jscpdCheckAsError, gi
     const options = getOptions(jscpdConfigPath, path, cwd);
     const clones = await (0,dist.detectClones)(options);
     if (clones.length > 0) {
-        jscpdCheckAsError ? (0,core.setFailed)('❌ DUPLICATED CODE FOUND') : (0,core.warning)('❌ DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
-        showAnnotation(clones, cwd, jscpdCheckAsError);
         const reportFiles = getReportFiles(cwd);
         const markdownReport = reportFiles.find(file => file.endsWith('.md'));
         const jsonReport = reportFiles.find(file => file.endsWith('.json'));
@@ -2567,6 +2565,8 @@ async function duplicatedCheck(workspace, jscpdConfigPath, jscpdCheckAsError, gi
         external_fs_.writeFileSync(markdownReport, message);
         await git/* UploadReportToArtifacts */.BC([markdownReport, jsonReport], REPORT_ARTIFACT_NAME);
         const isOverThreshold = checkThreshold(jsonReport, options.threshold || 0);
+        jscpdCheckAsError && isOverThreshold ? (0,core.setFailed)('❌ DUPLICATED CODE FOUND') : (0,core.warning)('DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
+        showAnnotation(clones, cwd, jscpdCheckAsError && isOverThreshold);
         await (0,execute/* execute */.h)(`rm -rf ${cwd}/${REPORT_ARTIFACT_NAME}`);
         (0,core.setOutput)('hasDuplicates', `${isOverThreshold}`);
     }
@@ -2602,8 +2602,8 @@ function checkWorkspace(workspace) {
     }
     return workspace;
 }
-function showAnnotation(clones, cwd, jscpdCheckAsError) {
-    const show = jscpdCheckAsError ? core.error : core.warning;
+function showAnnotation(clones, cwd, isError) {
+    const show = isError ? core.error : core.warning;
     for (const clone of clones) {
         show(`${clone.duplicationA.sourceId.replace(cwd, '')} (${clone.duplicationA.start.line}-${clone.duplicationA.end.line})
             and ${clone.duplicationB.sourceId.replace(cwd, '')} (${clone.duplicationB.start.line}-${clone.duplicationB.end.line})`, {
