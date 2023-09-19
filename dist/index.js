@@ -2505,7 +2505,7 @@ function readConfig(config, workspace, defaultConfig) {
         return JSON.parse(data);
     };
     const configFile = (0,external_path_.resolve)(config || defaultConfig);
-    const workspaceConfig = (0,external_path_.resolve)(workspace, config || defaultConfig);
+    const workspaceConfig = (0,external_path_.resolve)(workspace, defaultConfig);
     const configExists = external_fs_.existsSync(configFile);
     const workspaceConfigExists = external_fs_.existsSync(workspaceConfig);
     let resultConfigPath = '';

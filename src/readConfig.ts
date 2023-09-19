@@ -21,7 +21,7 @@ export function readConfig(config: string, workspace: string, defaultConfig: str
         return JSON.parse(data);
     };
     const configFile = resolve(config || defaultConfig);
-    const workspaceConfig = resolve(workspace, config || defaultConfig);
+    const workspaceConfig = resolve(workspace, defaultConfig);
 
     const configExists = fs.existsSync(configFile);
     const workspaceConfigExists = fs.existsSync(workspaceConfig);

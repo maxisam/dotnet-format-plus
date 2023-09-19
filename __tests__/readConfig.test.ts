@@ -26,7 +26,7 @@ describe('readConfig', () => {
             .mockReturnValueOnce(JSON.stringify({ setting2: 'value2', array: ['item2'] }));
         const result = readConfig('mockConfigPath', 'mockWorkspacePath', '.jscpd.json');
         expect(result).toEqual({
-            config: resolve('mockWorkspacePath', 'mockConfigPath'),
+            config: resolve('mockWorkspacePath', '.jscpd.json'),
             setting1: 'value1',
             setting2: 'value2',
             // the order of the array items is flipped because the workspaceConfig is merged last
