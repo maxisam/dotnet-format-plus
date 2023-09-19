@@ -3,8 +3,8 @@ name: "dotnet-format-plus"
 description: "Run dotnet format and optionally apply any fixes"
 
 branding:
-  icon: 'navigation-2'
-  color: 'green'
+  icon: "navigation-2"
+  color: "green"
 
 inputs:
   authToken:
@@ -52,7 +52,7 @@ inputs:
     description: "Skip analyzer fixes."
     required: false
     default: "false"
-  
+
   skipFixStyle:
     description: "Skip style fixes."
     required: false
@@ -72,21 +72,21 @@ inputs:
     description: "Sets the logging verbosity of the dotnet format process. Allowed values are q[uiet], m[inimal], n[ormal], d[etailed], and diag[nostic]"
     required: false
     default: "normal"
-  
+
   commitUserName:
     description: Name used for the commit user
     required: false
-    default: 'github-actions'
+    default: "github-actions"
 
   commitUserEmail:
     description: Email address used for the commit user
     required: false
-    default: 'bot@users.noreply.github.com'
-  
+    default: "bot@users.noreply.github.com"
+
   commitMessage:
     description: Message used for the commit
     required: false
-    default: '🤖 refactor: Apply dotnet-format changes'
+    default: "🤖 refactor: Apply dotnet-format changes"
 
   jscpdCheck:
     description: "Run jscpd to check for code duplication"
@@ -103,11 +103,11 @@ inputs:
     required: false
     default: "false"
 
-
 outputs:
   hasChanges:
     description: "A value indicating if any files were formatted. If `action` is `check` we will inspect the exit code of `dotnet format` to be <> 0. If `action` is `fix` we see if there are changes to files with `git status -s`."
-
+  hasDuplicates:
+    description: "A value indicating if any files were duplicated when `jscpdCheck` is `true`."
 runs:
   using: "node16"
   main: "dist/index.js"

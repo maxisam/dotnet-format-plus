@@ -35,12 +35,11 @@
     "node-fetch": "^3.3.2",
     "@jscpd/core": "^3.5.4",
     "@jscpd/finder": "^3.5.10",
-    "@jscpd/tokenizer": "^3.5.4",
-    "fs-extra": "^11.1.1"
+    "@jscpd/tokenizer": "^3.5.4"
   },
   "devDependencies": {
     "@types/node": "^18.17.15",
-    "@types/fs-extra": "^11.0.2",
+    "@types/jest": "^29.5.5",
     "@types/node-fetch": "2.6.5",
     "@babel/cli": "^7.22.15",
     "@babel/core": "^7.22.20",

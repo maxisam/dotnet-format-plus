@@ -1,14 +1,12 @@
-import { error, info, notice, warning } from '@actions/core';
+import { error, info, notice, setFailed, setOutput, warning } from '@actions/core';
 import { context } from '@actions/github';
-import { IClone, IOptions } from '@jscpd/core';
+import { IClone } from '@jscpd/core';
 import { Octokit } from '@octokit/rest';
 import * as fs from 'fs';
-import { readJSONSync } from 'fs-extra';
 import { detectClones } from 'jscpd';
-import { resolve } from 'path';
-import { inspect } from 'util';
 import { execute } from './execute';
 import * as git from './git';
+import { readConfig } from './readConfig';
 export const REPORT_ARTIFACT_NAME = 'jscpd-report';
 
 export async function duplicatedCheck(
@@ -21,7 +19,8 @@ export async function duplicatedCheck(
     const path = checkWorkspace(workspace);
     const clones = await jscpdCheck(path, jscpdConfigPath);
     if (clones.length > 0) {
-        info('❌ DUPLICATED CODE FOUND');
+        jscpdCheckAsError ? setFailed('❌ DUPLICATED CODE FOUND') : warning('❌ DUPLICATED CODE FOUND');
+        setOutput('hasDuplicates', 'true');
         showNotice(clones, cwd, jscpdCheckAsError);
         const reportFiles = getReportFiles(cwd);
         const markdownReport = reportFiles.find(file => file.endsWith('.md')) as string;
@@ -30,14 +29,15 @@ export async function duplicatedCheck(
         await git.UploadReportToArtifacts([markdownReport], REPORT_ARTIFACT_NAME);
         await execute(`rm -rf ${cwd}/${REPORT_ARTIFACT_NAME}`);
     } else {
-        info('✅✅✅✅✅ NO DUPLICATED CODE FOUND ✅✅✅✅✅');
+        setOutput('hasDuplicates', 'false');
+        notice('✅✅✅✅✅ NO DUPLICATED CODE FOUND ✅✅✅✅✅');
     }
 }
 
 export async function jscpdCheck(workspace: string, jscpdConfigPath: string): Promise<IClone[]> {
     const cwd = process.cwd();
     // read config from file
-    const configOptions = readConfig(jscpdConfigPath);
+    const configOptions = readConfig(jscpdConfigPath, workspace, '.jscpd.json');
     const defaultOptions = {
         path: [`${workspace}`],
         reporters: ['markdown', 'consoleFull'],
@@ -47,25 +47,6 @@ export async function jscpdCheck(workspace: string, jscpdConfigPath: string): Pr
     const clones = await detectClones(options);
 
     return clones;
-}
-
-function readConfig(config: string): Partial<IOptions> {
-    info(`🔎 config: ${config}`);
-    const configFile = resolve(config || '.jscpd.json');
-    const configExists = fs.existsSync(configFile);
-    if (configExists) {
-        const result = { config: configFile, ...readJSONSync(configFile) };
-        info('🔎 reading config...');
-        inspect(result);
-        if (result.path) {
-            // the path should comes from the action workspace
-            delete result.path;
-        }
-        return result;
-    } else {
-        notice(`🔎 config: ${config} not found`);
-    }
-    return {};
 }
 
 function getReportFiles(cwd: string): string[] {
@@ -95,7 +76,7 @@ function showNotice(clones: IClone[], cwd: string, jscpdCheckAsError: boolean): 
             `${clone.duplicationA.sourceId.replace(cwd, '')} (${clone.duplicationA.start.line}-${clone.duplicationA.end.line})
             and ${clone.duplicationB.sourceId.replace(cwd, '')} (${clone.duplicationB.start.line}-${clone.duplicationB.end.line})`,
             {
-                title: '❌ Duplicated code',
+                title: 'Duplicated code',
                 file: clone.duplicationA.sourceId,
                 startLine: clone.duplicationA.start.line,
                 endLine: clone.duplicationA.end.line

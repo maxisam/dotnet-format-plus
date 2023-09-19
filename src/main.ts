@@ -10,11 +10,12 @@ import * as git from './git';
 
 async function setOutput(isDryRun: boolean): Promise<void> {
     if (isDryRun) {
-        core.setOutput('has-changes', 'false');
+        core.setOutput('hasChanges', 'false');
+        core.notice('Dry run mode. No changes will be committed.');
     } else {
         const isFileChanged = await git.checkIsFileChanged();
-        info(`isFileChanged: ${isFileChanged}`);
-        core.setOutput('has-changes', isFileChanged.toString());
+        core.warning(`Dotnet Format File Changed: ${isFileChanged}`);
+        core.setOutput('hasChanges', isFileChanged.toString());
     }
 }
 
@@ -50,6 +51,7 @@ async function run(): Promise<boolean> {
                 await git.push(currentBranch);
             }
         }
+        finalFormatResult ? core.notice('✅ DOTNET FORMAT SUCCESS') : core.error('DOTNET FORMAT FAILED');
         if (inputs.jscpdCheck) {
             await duplicatedCheck(inputs.workspace, inputs.jscpdConfigPath, inputs.jscpdCheckAsError, githubClient);
         }
