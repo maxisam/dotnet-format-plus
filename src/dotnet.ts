@@ -1,7 +1,8 @@
-import { debug, info, setFailed, warning } from '@actions/core';
+import * as core from '@actions/core';
 import { context } from '@actions/github';
 
 import * as fs from 'fs';
+import { inspect } from 'util';
 import { REPORT_PATH } from './common';
 import { execute } from './execute';
 import { FormatOptions, FormatResult, ReportItem } from './modals';
@@ -14,7 +15,7 @@ function formatOnlyChangedFiles(onlyChangedFiles: boolean): boolean {
         if (context.eventName === 'issue_comment' || context.eventName === 'pull_request') {
             return true;
         }
-        warning('Formatting only changed files is available on the issue_comment and pull_request events only');
+        core.warning('Formatting only changed files is available on the issue_comment and pull_request events only');
         return false;
     }
     return false;
@@ -42,7 +43,7 @@ function buildFormatCommandArgsVariants(options: FormatOptions): string[][] {
     if (dotnetFormatOptions.length) {
         return dotnetFormatOptions;
     } else {
-        warning('All fix options are disabled. Falling back to default format command', ANNOTATION_OPTIONS);
+        core.warning('All fix options are disabled. Falling back to default format command', ANNOTATION_OPTIONS);
         return [['format']];
     }
 }
@@ -53,24 +54,22 @@ export async function buildFormatCommandArgs(options: FormatOptions, getFilesToC
     if (options.workspace) {
         dotnetFormatOptions.push(options.workspace);
     } else {
-        setFailed('Specify PROJECT | SOLUTION, .sln or .csproj');
+        core.setFailed('Specify PROJECT | SOLUTION, .sln or .csproj');
         return [];
     }
 
     options.dryRun && dotnetFormatOptions.push('--verify-no-changes');
-
     if (formatOnlyChangedFiles(options.onlyChangedFiles) && context.eventName === 'pull_request') {
         const filesToCheck = await getFilesToCheck();
-        debug(`filesToCheck: ${filesToCheck}`);
-
-        info(`Checking ${filesToCheck.length} files`);
+        core.debug(`filesToCheck: ${inspect(filesToCheck)}`);
+        core.info(`Checking ${filesToCheck.length} files`);
 
         if (!filesToCheck.length) {
-            debug('No files found for formatting');
-            warning('No files found for formatting', ANNOTATION_OPTIONS);
+            core.warning('No files found for formatting', ANNOTATION_OPTIONS);
         }
 
-        dotnetFormatOptions.push('--include', filesToCheck.join(' '));
+        // this doesn't work other than whitespace check
+        dotnetFormatOptions.push('--folder', '--include', filesToCheck.join(' '));
     }
 
     !!options.exclude && dotnetFormatOptions.push('--exclude', options.exclude);
