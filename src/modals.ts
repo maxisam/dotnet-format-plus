@@ -114,3 +114,27 @@ export interface IJsonReport {
     duplicates: IDuplication[];
     statistics: IStatistic;
 }
+
+export interface IDotnetFormatArgs {
+    include?: string[];
+    exclude?: string[];
+    verbosity?: string;
+    noRestore?: boolean;
+    reportPath?: string;
+    folder?: boolean;
+    severity?: severityType;
+    verifyNoChanges: boolean;
+}
+export interface IDotnetFormatConfig {
+    nugetConfigPath?: string;
+    // can be a file or solution
+    projectFileName?: string;
+    // simple mode will only run dotnet format and ignore all other options from style, analyzers and whitespace
+    isSubCommandMode?: boolean;
+    options?: IDotnetFormatArgs;
+    styleOptions?: IDotnetFormatArgs;
+    analyzersOptions?: IDotnetFormatArgs;
+    whitespaceOptions?: IDotnetFormatArgs;
+}
+
+export type severityType = 'error' | 'info' | 'warn';

@@ -35,7 +35,8 @@
     "node-fetch": "^3.3.2",
     "@jscpd/core": "^3.5.4",
     "@jscpd/finder": "^3.5.10",
-    "@jscpd/tokenizer": "^3.5.4"
+    "@jscpd/tokenizer": "^3.5.4",
+    "deepmerge": "4.3.1"
   },
   "devDependencies": {
     "@types/node": "^18.17.15",

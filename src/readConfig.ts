@@ -1,5 +1,5 @@
 import { info, warning } from '@actions/core';
-import { IOptions } from '@jscpd/core';
+import deepmerge from 'deepmerge';
 import * as fs from 'fs';
 import { resolve } from 'path';
 import { inspect } from 'util';
@@ -14,34 +14,39 @@ import { inspect } from 'util';
  * @param workspace - Path to the workspace directory.
  * @returns A merged configuration object, or an empty object if no configuration is found.
  */
+export function readJSONSync<T>(path: string): Partial<T> {
+    const data = fs.readFileSync(path, 'utf-8');
+    return JSON.parse(data);
+}
 
-export function readConfig(config: string, workspace: string, defaultConfig: string): Partial<IOptions> {
-    const readJSONSync = (path: string): Partial<IOptions> => {
-        const data = fs.readFileSync(path, 'utf-8');
-        return JSON.parse(data);
-    };
+/**
+ * Custom array merge function to remove duplicates.
+ *
+ * @param source - Source array.
+ * @param target - Target array.
+ * @returns Merged array with duplicates removed.
+ */
+function arrayMergeDedupe<T>(source: T[], target: T[]): T[] {
+    return Array.from(new Set([...source, ...target]));
+}
+
+export function readConfig<T>(config: string, workspace: string, defaultConfig: string): Partial<T> {
     const configFile = resolve(config || defaultConfig);
     const workspaceConfig = resolve(workspace, defaultConfig);
 
     const configExists = fs.existsSync(configFile);
     const workspaceConfigExists = fs.existsSync(workspaceConfig);
 
-    let resultConfigPath = '';
-    let resultData: Partial<IOptions> = {};
+    let resultData: Partial<T> = {};
 
     if (configExists) {
-        resultConfigPath = configFile;
-        resultData = { ...resultData, ...readJSONSync(configFile) };
+        resultData = deepmerge(resultData, readJSONSync<T>(configFile), { arrayMerge: arrayMergeDedupe });
     }
     if (workspaceConfigExists) {
-        resultConfigPath = workspaceConfig;
-        const workspaceConfigData = readJSONSync(workspaceConfig);
-        for (const key in resultData) {
-            mergeArrayProps(workspaceConfigData, resultData, key as keyof IOptions);
-        }
-        resultData = { ...resultData, ...workspaceConfigData };
+        resultData = deepmerge(resultData, readJSONSync<T>(workspaceConfig), { arrayMerge: arrayMergeDedupe });
     }
-    if (resultConfigPath) {
+    if (configExists || workspaceConfigExists) {
+        const resultConfigPath = workspaceConfigExists ? workspaceConfig : configFile;
         const result = { config: resultConfigPath, ...resultData };
         info(`🔎 loaded config: ${inspect(result)}`);
         return result;
@@ -49,12 +54,4 @@ export function readConfig(config: string, workspace: string, defaultConfig: str
 
     warning(`🔎 config: ${config} not found`);
     return {};
-}
-
-function mergeArrayProps(newConfig: Partial<IOptions>, origConfig: Partial<IOptions>, prop: keyof IOptions): void {
-    if (Array.isArray(newConfig[prop]) && Array.isArray(origConfig[prop])) {
-        newConfig[prop] = [...(newConfig[prop] as string[]), ...(origConfig[prop] as string[])];
-    } else if (!newConfig[prop] && Array.isArray(origConfig[prop])) {
-        newConfig[prop] = origConfig[prop];
-    }
 }
