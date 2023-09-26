@@ -18,6 +18,7 @@ export enum INPUTS {
     commitUserEmail = 'commitUserEmail',
     commitMessage = 'commitMessage',
     nugetConfigPath = 'nugetConfigPath',
+    dotnetFormatConfigPath = 'dotnetFormatConfigPath',
     jscpdCheck = 'jscpdCheck',
     jscpdConfigPath = 'jscpdConfigPath',
     jscpdCheckAsError = 'jscpdCheckAsError'
@@ -41,6 +42,7 @@ export interface IInputs {
     commitUserEmail: string;
     commitMessage: string;
     nugetConfigPath: string;
+    dotnetFormatConfigPath: string;
     jscpdCheck: boolean;
     jscpdConfigPath: string;
     jscpdCheckAsError: boolean;
@@ -116,21 +118,21 @@ export interface IJsonReport {
 }
 
 export interface IDotnetFormatArgs {
+    isEabled: boolean;
     include?: string[];
     exclude?: string[];
     verbosity?: string;
     noRestore?: boolean;
-    reportPath?: string;
     folder?: boolean;
     severity?: severityType;
     verifyNoChanges: boolean;
 }
 export interface IDotnetFormatConfig {
     nugetConfigPath?: string;
-    // can be a file or solution
+    // can be a cproj or solution file
     projectFileName?: string;
     // simple mode will only run dotnet format and ignore all other options from style, analyzers and whitespace
-    isSubCommandMode?: boolean;
+    onlyChangedFiles: boolean;
     options?: IDotnetFormatArgs;
     styleOptions?: IDotnetFormatArgs;
     analyzersOptions?: IDotnetFormatArgs;

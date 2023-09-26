@@ -88,6 +88,10 @@ inputs:
     required: false
     default: "🤖 refactor: Apply dotnet-format changes"
 
+  dotnetFormatConfigPath:
+    description: "Path to dotnet format config file"
+    required: false
+    default: ".dotnet-format.json"
   jscpdCheck:
     description: "Run jscpd to check for code duplication"
     required: false
