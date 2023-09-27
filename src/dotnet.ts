@@ -6,7 +6,7 @@ import path from 'path';
 import { inspect } from 'util';
 import { REPORT_PATH } from './common';
 import { execute } from './execute';
-import { FormatResult, IDotnetFormatArgs, IDotnetFormatConfig, ReportItem } from './modals';
+import { FormatResult, FormatType, IDotnetFormatArgs, IDotnetFormatConfig, ReportItem } from './modals';
 
 export const ANNOTATION_OPTIONS = {
     title: 'DOTNET FORMAT Check'
@@ -28,33 +28,6 @@ function formatOnlyChangedFiles(onlyChangedFiles: boolean): boolean {
     return false;
 }
 
-// function buildFormatCommandArgsVariants(options: FormatOptions): string[][] {
-//     const dotnetFormatOptions: string[][] = [];
-//     if (
-//         !options.skipFixWhitespace &&
-//         !options.skipFixAnalyzers &&
-//         !options.skipFixStyle &&
-//         options.styleSeverityLevel === options.analyzersSeverityLevel
-//     ) {
-//         return [['format']];
-//     }
-//     if (!options.skipFixWhitespace) {
-//         dotnetFormatOptions.push(['format', 'whitespace']);
-//     }
-//     if (!options.skipFixAnalyzers) {
-//         dotnetFormatOptions.push(['format', 'analyzers', '--severity', options.analyzersSeverityLevel]);
-//     }
-//     if (!options.skipFixStyle) {
-//         dotnetFormatOptions.push(['format', 'style', '--severity', options.styleSeverityLevel]);
-//     }
-//     if (dotnetFormatOptions.length) {
-//         return dotnetFormatOptions;
-//     } else {
-//         core.warning('All fix options are disabled. Falling back to default format command', ANNOTATION_OPTIONS);
-//         return [['format']];
-//     }
-// }
-
 export async function generateFormatCommandArgs(
     config: Partial<IDotnetFormatConfig>,
     workspace: string,
@@ -71,30 +44,53 @@ export async function generateFormatCommandArgs(
         return [];
     }
     if (config.options && config.options.isEabled) {
-        const args = await buildArgs(config.options, formatOnlyChangedFiles(config.onlyChangedFiles || false), getFilesToCheck);
+        const args = await buildArgs(config.options, formatOnlyChangedFiles(config.onlyChangedFiles || false), getFilesToCheck, FormatType.all);
         return [['format', ...dotnetFormatOptions, ...args, '--report', `${REPORT_PATH}/dotnet-format.json`]];
     } else {
         const allArgs: string[][] = [];
         core.info('🔍 sub command');
         if (config.whitespaceOptions && config.whitespaceOptions.isEabled) {
-            const args = await buildArgs(config.whitespaceOptions, formatOnlyChangedFiles(config.onlyChangedFiles || false), getFilesToCheck);
+            const args = await buildArgs(
+                config.whitespaceOptions,
+                formatOnlyChangedFiles(config.onlyChangedFiles || false),
+                getFilesToCheck,
+                FormatType.whitespace
+            );
             allArgs.push(['format', 'whitespace', ...dotnetFormatOptions, ...args, '--report', `${REPORT_PATH}/whitespace-format.json`]);
         }
         if (config.analyzersOptions && config.analyzersOptions.isEabled) {
-            const args = await buildArgs(config.analyzersOptions, formatOnlyChangedFiles(config.onlyChangedFiles || false), getFilesToCheck);
+            const args = await buildArgs(
+                config.analyzersOptions,
+                formatOnlyChangedFiles(config.onlyChangedFiles || false),
+                getFilesToCheck,
+                FormatType.analyzers
+            );
             allArgs.push(['format', 'analyzers', ...dotnetFormatOptions, ...args, '--report', `${REPORT_PATH}/analyzers-format.json`]);
         }
         if (config.styleOptions && config.styleOptions.isEabled) {
-            const args = await buildArgs(config.styleOptions, formatOnlyChangedFiles(config.onlyChangedFiles || false), getFilesToCheck);
+            const args = await buildArgs(
+                config.styleOptions,
+                formatOnlyChangedFiles(config.onlyChangedFiles || false),
+                getFilesToCheck,
+                FormatType.style
+            );
             allArgs.push(['format', 'style', ...dotnetFormatOptions, ...args, '--report', `${REPORT_PATH}/style-format.json`]);
         }
         return allArgs;
     }
 }
-async function buildArgs(options: IDotnetFormatArgs, onlyChangedFiles: boolean, getFilesToCheck: () => Promise<string[]>): Promise<string[]> {
+async function buildArgs(
+    options: IDotnetFormatArgs,
+    onlyChangedFiles: boolean,
+    getFilesToCheck: () => Promise<string[]>,
+    type: FormatType
+): Promise<string[]> {
     const dotnetFormatOptions: string[] = [];
 
     options?.verifyNoChanges && dotnetFormatOptions.push('--verify-no-changes');
+    if (type === FormatType.whitespace && options.folder) {
+        dotnetFormatOptions.push('--folder');
+    }
     if (onlyChangedFiles) {
         const filesToCheck = await getFilesToCheck();
         core.debug(`filesToCheck: ${inspect(filesToCheck)}`);
@@ -105,50 +101,17 @@ async function buildArgs(options: IDotnetFormatArgs, onlyChangedFiles: boolean, 
         }
 
         // this doesn't work other than whitespace check
-        dotnetFormatOptions.push('--folder', '--include', filesToCheck.join(' '));
+        dotnetFormatOptions.push('--include', filesToCheck.join(' '));
     }
     !!options?.exclude && dotnetFormatOptions.push('--exclude', options.exclude.join(' '));
     dotnetFormatOptions.push('--verbosity', options?.verbosity || 'normal');
     options.noRestore && dotnetFormatOptions.push('--no-restore');
-    dotnetFormatOptions.push('--severity', options?.severity || 'error');
 
+    if (type !== FormatType.whitespace) {
+        dotnetFormatOptions.push('--severity', options?.severity || 'error');
+    }
     return dotnetFormatOptions;
 }
-// export async function buildFormatCommandArgs(options: FormatOptions, getFilesToCheck: () => Promise<string[]>): Promise<string[][]> {
-//     const dotnetFormatOptions: string[] = [];
-
-//     if (options.workspace) {
-//         dotnetFormatOptions.push(options.workspace);
-//     } else {
-//         core.setFailed('Specify PROJECT | SOLUTION, .sln or .csproj');
-//         return [];
-//     }
-
-//     options.dryRun && dotnetFormatOptions.push('--verify-no-changes');
-//     if (formatOnlyChangedFiles(options.onlyChangedFiles) && context.eventName === 'pull_request') {
-//         const filesToCheck = await getFilesToCheck();
-//         core.debug(`filesToCheck: ${inspect(filesToCheck)}`);
-//         core.info(`Checking ${filesToCheck.length} files`);
-
-//         if (!filesToCheck.length) {
-//             core.warning('No files found for formatting', ANNOTATION_OPTIONS);
-//         }
-
-//         // this doesn't work other than whitespace check
-//         dotnetFormatOptions.push('--folder', '--include', filesToCheck.join(' '));
-//     }
-
-//     !!options.exclude && dotnetFormatOptions.push('--exclude', options.exclude);
-//     dotnetFormatOptions.push('--verbosity', options.logLevel);
-//     const dotnetFormatOptionsGroups = buildFormatCommandArgsVariants(options);
-//     return dotnetFormatOptionsGroups.map(option => {
-//         if (option.length === 1) {
-//             return [...option, ...dotnetFormatOptions, '--report', `${REPORT_PATH}/dotnet-format.json`];
-//         } else {
-//             return [...option, ...dotnetFormatOptions, '--report', `${REPORT_PATH}/${option[1]}-format.json`];
-//         }
-//     });
-// }
 
 export async function execFormat(formatArgs: string[]): Promise<FormatResult> {
     const { stdout, stderr } = await execute('dotnet', process.cwd(), formatArgs, false, true);

@@ -121,7 +121,7 @@ export interface IDotnetFormatArgs {
     isEabled: boolean;
     include?: string[];
     exclude?: string[];
-    verbosity?: string;
+    verbosity?: VerbosityType;
     noRestore?: boolean;
     folder?: boolean;
     severity?: severityType;
@@ -139,4 +139,12 @@ export interface IDotnetFormatConfig {
     whitespaceOptions?: IDotnetFormatArgs;
 }
 
+export type VerbosityType = 'quiet' | 'minimal' | 'normal' | 'detailed' | 'diagnostic';
 export type severityType = 'error' | 'info' | 'warn';
+
+export enum FormatType {
+    all = 'all',
+    style = 'style',
+    analyzers = 'analyzers',
+    whitespace = 'whitespace'
+}

@@ -26,6 +26,7 @@ describe('generateFormatCommandArgs', () => {
     });
 
     it('should return an array with format command if options are enabled', async () => {
+        const workspace = '/path/to/workspace';
         const config: IDotnetFormatConfig = {
             projectFileName: 'test.csproj',
             onlyChangedFiles: false,
@@ -38,7 +39,6 @@ describe('generateFormatCommandArgs', () => {
                 verifyNoChanges: true
             }
         };
-        const workspace = '/path/to/workspace';
         const getFilesToCheck = jest.fn();
         const result = await generateFormatCommandArgs(config, workspace, getFilesToCheck);
         expect(result).toEqual([
@@ -58,6 +58,7 @@ describe('generateFormatCommandArgs', () => {
     });
 
     it('should return an array with sub commands if options are enabled', async () => {
+        const workspace = '/path/to/workspace';
         const config: IDotnetFormatConfig = {
             projectFileName: 'test.csproj',
             onlyChangedFiles: false,
@@ -66,27 +67,26 @@ describe('generateFormatCommandArgs', () => {
                 verbosity: 'normal',
                 noRestore: true,
                 folder: false,
-                severity: 'error',
+                severity: 'warn',
                 verifyNoChanges: true
             },
             analyzersOptions: {
                 isEabled: true,
-                verbosity: 'normal',
+                verbosity: 'detailed',
                 noRestore: true,
-                folder: false,
+                folder: true,
                 severity: 'error',
                 verifyNoChanges: true
             },
             whitespaceOptions: {
                 isEabled: true,
-                verbosity: 'normal',
+                verbosity: 'diagnostic',
                 noRestore: true,
-                folder: false,
-                severity: 'error',
-                verifyNoChanges: true
+                folder: true,
+                severity: 'warn',
+                verifyNoChanges: false
             }
         };
-        const workspace = '/path/to/workspace';
         const getFilesToCheck = jest.fn();
         const result = await generateFormatCommandArgs(config, workspace, getFilesToCheck);
         expect(result).toEqual([
@@ -94,10 +94,10 @@ describe('generateFormatCommandArgs', () => {
                 'format',
                 'whitespace',
                 '/path/to/workspace/test.csproj',
-                '--arg1',
-                'value1',
-                '--arg2',
-                'value2',
+                '--folder',
+                '--verbosity',
+                config.whitespaceOptions?.verbosity,
+                '--no-restore',
                 '--report',
                 `${REPORT_PATH}/whitespace-format.json`
             ],
@@ -105,10 +105,12 @@ describe('generateFormatCommandArgs', () => {
                 'format',
                 'analyzers',
                 '/path/to/workspace/test.csproj',
-                '--arg1',
-                'value1',
-                '--arg2',
-                'value2',
+                '--verify-no-changes',
+                '--verbosity',
+                config.analyzersOptions?.verbosity,
+                '--no-restore',
+                '--severity',
+                config.analyzersOptions?.severity,
                 '--report',
                 `${REPORT_PATH}/analyzers-format.json`
             ],
@@ -116,10 +118,12 @@ describe('generateFormatCommandArgs', () => {
                 'format',
                 'style',
                 '/path/to/workspace/test.csproj',
-                '--arg1',
-                'value1',
-                '--arg2',
-                'value2',
+                '--verify-no-changes',
+                '--verbosity',
+                config.styleOptions?.verbosity,
+                '--no-restore',
+                '--severity',
+                config.styleOptions?.severity,
                 '--report',
                 `${REPORT_PATH}/style-format.json`
             ]
