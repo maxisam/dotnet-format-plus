@@ -112,3 +112,10 @@ export async function RemoveReportFiles(): Promise<boolean> {
     const { result } = await execute(`rm -rf ${REPORT_PATH}/`);
     return result;
 }
+export function formatOnlyChangedFiles(onlyChangedFiles: boolean): boolean {
+    if (onlyChangedFiles && ['issue_comment', 'pull_request'].includes(context.eventName)) {
+        return true;
+    }
+    core.warning('Formatting only changed files is available on the issue_comment and pull_request events only');
+    return false;
+}

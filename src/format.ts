@@ -12,18 +12,21 @@ import { readConfig } from './readConfig';
 export async function format(inputs: IInputs, githubClient: InstanceType<typeof Octokit>): Promise<boolean> {
     const configOptions = getOptions(inputs.dotnetFormatConfigPath, inputs.workspace);
     dotnet.setDotnetEnvironmentVariables();
-
-    if (configOptions.nugetConfigPath) {
-        await dotnet.nugetRestore(inputs.nugetConfigPath, inputs.workspace);
-    }
+    configOptions.nugetConfigPath && (await dotnet.nugetRestore(inputs.nugetConfigPath, inputs.workspace));
 
     const options = Common.getFormatOptions(inputs);
-    const formatArgs = await dotnet.generateFormatCommandArgs(configOptions, inputs.workspace, async () => {
-        return await git.getPullRequestFiles(githubClient);
-    });
-    // const formatArgs = await dotnet.buildFormatCommandArgs(options, async () => {
-    //     return await git.getPullRequestFiles(githubClient);
-    // });
+    let changedFiles: string[] = [];
+
+    if (Common.formatOnlyChangedFiles(options.onlyChangedFiles)) {
+        changedFiles = await git.getPullRequestFiles(githubClient);
+        if (!changedFiles.length) {
+            core.warning('No files found for formatting', dotnet.ANNOTATION_OPTIONS);
+            return true;
+        }
+    }
+
+    const formatArgs = dotnet.generateFormatCommandArgs(configOptions, inputs.workspace, changedFiles);
+
     let finalFormatResult = false;
     for (const args of formatArgs) {
         const { formatResult } = await dotnet.execFormat(args);
@@ -32,7 +35,7 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
     }
     const reportFiles = dotnet.getReportFiles();
     await git.UploadReportToArtifacts(reportFiles, REPORT_ARTIFACT_NAME);
-    if (finalFormatResult && context.eventName === 'pull_request' && !options.dryRun) {
+    if (finalFormatResult && context.eventName === 'pull_request') {
         const message = dotnet.generateReport(reportFiles);
         // means that there are changes
         if (message) {
@@ -48,7 +51,7 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
             core.notice('✅ NO CHANGES', dotnet.ANNOTATION_OPTIONS);
         }
     }
-    await setOutput(options.dryRun);
+    await setOutput(configOptions);
     finalFormatResult
         ? core.notice('✅ DOTNET FORMAT SUCCESS', dotnet.ANNOTATION_OPTIONS)
         : core.error('DOTNET FORMAT FAILED', dotnet.ANNOTATION_OPTIONS);
@@ -61,7 +64,16 @@ function getOptions(configPath: string, workspace: string): Partial<IDotnetForma
     return configOptions;
 }
 
-export async function setOutput(isDryRun: boolean): Promise<void> {
+export async function setOutput(config: Partial<IDotnetFormatConfig>): Promise<void> {
+    let isDryRun = false;
+    isDryRun = !!config.options?.isEabled && config.options?.verifyNoChanges;
+    if (!config.options?.isEabled) {
+        const w = (config.whitespaceOptions?.isEabled && config.whitespaceOptions?.verifyNoChanges) || !config.whitespaceOptions?.isEabled;
+        const a = (config.analyzersOptions?.isEabled && config.analyzersOptions?.verifyNoChanges) || !config.analyzersOptions?.isEabled;
+        const s = (config.styleOptions?.isEabled && config.styleOptions?.verifyNoChanges) || !config.styleOptions?.isEabled;
+        isDryRun = w && a && s;
+    }
+
     if (isDryRun) {
         core.setOutput('hasChanges', 'false');
         core.notice('Dry run mode. No changes will be committed.', dotnet.ANNOTATION_OPTIONS);

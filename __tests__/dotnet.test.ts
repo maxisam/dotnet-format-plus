@@ -16,16 +16,16 @@ describe('generateFormatCommandArgs', () => {
         });
     });
 
-    it('should return an empty array if workspace is not specified', async () => {
+    it('should return an empty array if workspace is not specified', () => {
         const config = {};
         const workspace = '';
-        const getFilesToCheck = jest.fn();
-        const result = await generateFormatCommandArgs(config, workspace, getFilesToCheck);
+        const changedFiles: string[] = [];
+        const result = generateFormatCommandArgs(config, workspace, changedFiles);
         expect(result).toEqual([]);
         expect(core.setFailed).toHaveBeenCalledWith('Specify PROJECT | SOLUTION, .sln or .csproj');
     });
 
-    it('should return an array with format command if options are enabled', async () => {
+    it('should return an array with format command if options are enabled', () => {
         const workspace = '/path/to/workspace';
         const config: IDotnetFormatConfig = {
             projectFileName: 'test.csproj',
@@ -39,8 +39,8 @@ describe('generateFormatCommandArgs', () => {
                 verifyNoChanges: true
             }
         };
-        const getFilesToCheck = jest.fn();
-        const result = await generateFormatCommandArgs(config, workspace, getFilesToCheck);
+        const changedFiles: string[] = [];
+        const result = generateFormatCommandArgs(config, workspace, changedFiles);
         expect(result).toEqual([
             [
                 'format',
@@ -57,7 +57,7 @@ describe('generateFormatCommandArgs', () => {
         ]);
     });
 
-    it('should return an array with sub commands if options are enabled', async () => {
+    it('should return an array with sub commands if options are enabled', () => {
         const workspace = '/path/to/workspace';
         const config: IDotnetFormatConfig = {
             projectFileName: 'test.csproj',
@@ -87,8 +87,8 @@ describe('generateFormatCommandArgs', () => {
                 verifyNoChanges: false
             }
         };
-        const getFilesToCheck = jest.fn();
-        const result = await generateFormatCommandArgs(config, workspace, getFilesToCheck);
+        const changedFiles: string[] = [];
+        const result = generateFormatCommandArgs(config, workspace, changedFiles);
         expect(result).toEqual([
             [
                 'format',
