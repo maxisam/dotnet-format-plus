@@ -567,15 +567,12 @@ var github = __nccwpck_require__(95438);
 const external_console_namespaceObject = require("console");
 // EXTERNAL MODULE: external "path"
 var external_path_ = __nccwpck_require__(71017);
-// EXTERNAL MODULE: external "util"
-var external_util_ = __nccwpck_require__(73837);
 ;// CONCATENATED MODULE: ./lib/const.js
 const includedFileTypes = ['.cs', '.vb', '.cspoj', '.vbproj', '.fs', '.fsproj', '.cshtml', '.vbhtml'];
 
 // EXTERNAL MODULE: ./lib/execute.js
 var execute = __nccwpck_require__(3532);
 ;// CONCATENATED MODULE: ./lib/git.js
-
 
 
 
@@ -646,12 +643,13 @@ async function init(workspace, username, email) {
 }
 async function commit(workspace, message, branch) {
     // check what is the current branch
-    const { stdout, stderr } = await (0,execute/* execute */.h)(`git branch --show-current`);
-    core.info(`🔍 "${(0,external_util_.inspect)(stdout)}", ${(0,external_util_.inspect)(stderr)}`);
+    const { stdout } = await (0,execute/* execute */.h)(`git branch --show-current`);
     if (stdout.join('').trim() !== branch) {
-        core.info(`It is on "${stdout.join('').trim()}", Checking out "${branch}"`);
+        core.info(`It is on "${stdout.join('').trim()}" branch, Checking out "${branch}"`);
         await (0,execute/* execute */.h)(`git fetch origin ${branch} --depth=1`);
+        await (0,execute/* execute */.h)(`git stash`);
         await (0,execute/* execute */.h)(`git checkout -b ${branch} FETCH_HEAD`);
+        await (0,execute/* execute */.h)(`git stash pop`);
     }
     core.info(`Committing changes to ${branch}…`);
     await (0,execute/* execute */.h)(`git add .`, workspace);

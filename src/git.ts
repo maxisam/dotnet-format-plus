@@ -4,7 +4,6 @@ import { context } from '@actions/github';
 import { Octokit } from '@octokit/rest';
 import { debug } from 'console';
 import { extname } from 'path';
-import { inspect } from 'util';
 import { FileStatus, includedFileTypes } from './const';
 import { execute } from './execute';
 
@@ -79,12 +78,13 @@ export async function init(workspace: string, username: string, email: string): 
 
 export async function commit(workspace: string, message: string, branch: string): Promise<boolean> {
     // check what is the current branch
-    const { stdout, stderr } = await execute(`git branch --show-current`);
-    core.info(`🔍 "${inspect(stdout)}", ${inspect(stderr)}`);
+    const { stdout } = await execute(`git branch --show-current`);
     if (stdout.join('').trim() !== branch) {
-        core.info(`It is on "${stdout.join('').trim()}", Checking out "${branch}"`);
+        core.info(`It is on "${stdout.join('').trim()}" branch, Checking out "${branch}"`);
         await execute(`git fetch origin ${branch} --depth=1`);
+        await execute(`git stash`);
         await execute(`git checkout -b ${branch} FETCH_HEAD`);
+        await execute(`git stash pop`);
     }
     core.info(`Committing changes to ${branch}…`);
     await execute(`git add .`, workspace);
