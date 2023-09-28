@@ -20,7 +20,6 @@ export function setDotnetEnvironmentVariables(): void {
 }
 
 export function generateFormatCommandArgs(config: Partial<IDotnetFormatConfig>, workspace: string, changedFiles: string[]): string[][] {
-    core.info(`loaded options: ${inspect(config)}`);
     if (!workspace) {
         core.setFailed('Specify PROJECT | SOLUTION, .sln or .csproj');
         return [];

@@ -1,7 +1,6 @@
 import * as core from '@actions/core';
 import { context } from '@actions/github';
 import { Octokit } from '@octokit/rest';
-import { inspect } from 'util';
 import * as Common from './common';
 import { REPORT_ARTIFACT_NAME } from './common';
 import * as dotnet from './dotnet';
@@ -96,7 +95,6 @@ function getOptions(inputs: IInputs): Partial<IDotnetFormatConfig> {
         }
     };
     const configOptions = readConfig<IDotnetFormatConfig>(defaultOptions, inputs.dotnetFormatConfigPath, inputs.workspace, '.dotnet-format.json');
-    core.info(`loaded options: ${inspect(configOptions)}`);
     return configOptions;
 }
 
