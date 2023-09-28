@@ -15,6 +15,7 @@ export function getInputs(): IInputs {
         onlyChangedFiles: core.getInput(INPUTS.onlyChangedFiles) === 'true',
         failFast: core.getInput(INPUTS.failFast) === 'true',
         workspace: core.getInput(INPUTS.workspace),
+        projectFileName: core.getInput(INPUTS.projectFileName),
         severityLevel: core.getInput(INPUTS.severityLevel) as FixLevelType,
         logLevel: core.getInput(INPUTS.logLevel) as VerbosityType,
         commitUsername: core.getInput(INPUTS.commitUsername),

@@ -16,6 +16,11 @@ inputs:
     required: false
     default: "fix"
 
+  projectFileName:
+    description: "The solution or project file to operate on."
+    required: false
+    default: ""
+
   onlyChangedFiles:
     description: "Only changed files in the current pull request should be formatted. Only works when the trigger is a pull request."
     required: false

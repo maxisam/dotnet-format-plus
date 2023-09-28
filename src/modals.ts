@@ -6,6 +6,7 @@ export enum INPUTS {
     onlyChangedFiles = 'onlyChangedFiles',
     failFast = 'failFast',
     workspace = 'workspace',
+    projectFileName = 'projectFileName',
     severityLevel = 'severityLevel',
     logLevel = 'logLevel',
     commitUsername = 'commitUsername',
@@ -24,6 +25,7 @@ export interface IInputs {
     onlyChangedFiles: boolean;
     failFast: boolean;
     workspace: string;
+    projectFileName: string;
     severityLevel: FixLevelType;
     logLevel: VerbosityType;
     commitUsername: string;
@@ -37,20 +39,6 @@ export interface IInputs {
 }
 
 export type FixLevelType = 'error' | 'info' | 'warn';
-
-export interface FormatOptions {
-    onlyChangedFiles: boolean;
-    dryRun: boolean;
-    workspace?: string;
-    include?: string;
-    exclude?: string;
-    logLevel: string;
-    skipFixWhitespace: boolean;
-    skipFixAnalyzers: boolean;
-    skipFixStyle: boolean;
-    analyzersSeverityLevel: FixLevelType;
-    styleSeverityLevel: FixLevelType;
-}
 
 export type FormatResult = {
     stdout: string[];

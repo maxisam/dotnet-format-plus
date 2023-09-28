@@ -60,6 +60,7 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
 function getOptions(inputs: IInputs): Partial<IDotnetFormatConfig> {
     const defaultOptions: Partial<IDotnetFormatConfig> = {
         nugetConfigPath: inputs.nugetConfigPath,
+        projectFileName: inputs.projectFileName,
         onlyChangedFiles: inputs.onlyChangedFiles,
         options: {
             isEabled: true,
