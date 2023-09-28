@@ -5,28 +5,25 @@
         "isEnabled": true,
         "verbosity": "normal",
         "severity": "error",
-        "verifyNoChanges": true
+        "verifyNoChanges": false
     },
     "styleOptions": {
         "isEnabled": false,
         "verbosity": "normal",
         "folder": false,
-        "severity": "warn",
-        "verifyNoChanges": true
+        "severity": "warn"
     },
     "analyzersOptions": {
         "isEnabled": false,
         "verbosity": "detailed",
         "folder": true,
-        "severity": "error",
-        "verifyNoChanges": true
+        "severity": "error"
     },
     "whitespaceOptions": {
         "isEnabled": false,
         "verbosity": "diagnostic",
         "noRestore": true,
         "folder": true,
-        "severity": "warn",
-        "verifyNoChanges": false
+        "severity": "warn"
     }
 }
