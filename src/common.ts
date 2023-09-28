@@ -59,7 +59,7 @@ export function getOctokitRest(authToken: string, userAgent = 'github-action'): 
 export function getCurrentBranch(): string {
     const branch = context.payload?.pull_request?.head?.ref || context.ref;
     const current = branch.replace('refs/heads/', '');
-    core.info(`Current branch: ${current}`);
+    core.info(`Current branch: "${current}"`);
     return current;
 }
 
@@ -71,6 +71,6 @@ export function formatOnlyChangedFiles(onlyChangedFiles: boolean): boolean {
     if (onlyChangedFiles && ['issue_comment', 'pull_request'].includes(context.eventName)) {
         return true;
     }
-    core.warning('Formatting only changed files is available on the issue_comment and pull_request events only');
+    onlyChangedFiles && core.warning('Formatting only changed files is available on the issue_comment and pull_request events only');
     return false;
 }

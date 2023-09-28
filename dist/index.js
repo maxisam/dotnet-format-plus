@@ -84,7 +84,7 @@ function getOctokitRest(authToken, userAgent = 'github-action') {
 function getCurrentBranch() {
     const branch = _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload?.pull_request?.head?.ref || _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.ref;
     const current = branch.replace('refs/heads/', '');
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Current branch: ${current}`);
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Current branch: "${current}"`);
     return current;
 }
 async function RemoveReportFiles() {
@@ -95,7 +95,7 @@ function formatOnlyChangedFiles(onlyChangedFiles) {
     if (onlyChangedFiles && ['issue_comment', 'pull_request'].includes(_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.eventName)) {
         return true;
     }
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.warning('Formatting only changed files is available on the issue_comment and pull_request events only');
+    onlyChangedFiles && _actions_core__WEBPACK_IMPORTED_MODULE_0__.warning('Formatting only changed files is available on the issue_comment and pull_request events only');
     return false;
 }
 
@@ -277,10 +277,10 @@ async function execute(cmd, cwd = process.cwd(), args = [], silent = false, igno
 
 // EXPORTS
 __nccwpck_require__.d(__webpack_exports__, {
-  "W": () => (/* binding */ format)
+  "WU": () => (/* binding */ format)
 });
 
-// UNUSED EXPORTS: setOutput
+// UNUSED EXPORTS: checkIsDryRun, setOutput
 
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
 var core = __nccwpck_require__(42186);
@@ -456,6 +456,7 @@ async function format(inputs, githubClient) {
     }
     const reportFiles = getReportFiles();
     await git/* UploadReportToArtifacts */.BC(reportFiles, common/* REPORT_ARTIFACT_NAME */.GB);
+    const isDryRun = checkIsDryRun(configOptions);
     if (finalFormatResult && github.context.eventName === 'pull_request') {
         const message = generateReport(reportFiles);
         // means that there are changes
@@ -463,17 +464,19 @@ async function format(inputs, githubClient) {
             await git/* comment */.UI(githubClient, message);
             const isRemoved = await common/* RemoveReportFiles */.VO();
             const isInit = isRemoved && (await git/* init */.S1(process.cwd(), inputs.commitUsername, inputs.commitUserEmail));
-            const currentBranch = common/* getCurrentBranch */.UJ();
-            const isCommit = isInit && (await git/* commit */.th(process.cwd(), inputs.commitMessage, currentBranch));
-            if (isCommit) {
-                await git/* push */.VF(currentBranch);
+            if (!isDryRun && reportFiles.length) {
+                const currentBranch = common/* getCurrentBranch */.UJ();
+                const isCommit = isInit && (await git/* commit */.th(process.cwd(), inputs.commitMessage, currentBranch));
+                if (isCommit) {
+                    await git/* push */.VF(currentBranch);
+                }
             }
         }
         else {
             core.notice('✅ NO CHANGES', ANNOTATION_OPTIONS);
         }
     }
-    await setOutput(configOptions);
+    await setOutput(isDryRun);
     finalFormatResult
         ? core.notice('✅ DOTNET FORMAT SUCCESS', ANNOTATION_OPTIONS)
         : core.error('DOTNET FORMAT FAILED', ANNOTATION_OPTIONS);
@@ -518,15 +521,7 @@ function getOptions(inputs) {
     core.info(`loaded options: ${(0,external_util_.inspect)(configOptions)}`);
     return configOptions;
 }
-async function setOutput(config) {
-    let isDryRun = false;
-    isDryRun = !!config.options?.isEabled && config.options?.verifyNoChanges;
-    if (!config.options?.isEabled) {
-        const w = (config.whitespaceOptions?.isEabled && config.whitespaceOptions?.verifyNoChanges) || !config.whitespaceOptions?.isEabled;
-        const a = (config.analyzersOptions?.isEabled && config.analyzersOptions?.verifyNoChanges) || !config.analyzersOptions?.isEabled;
-        const s = (config.styleOptions?.isEabled && config.styleOptions?.verifyNoChanges) || !config.styleOptions?.isEabled;
-        isDryRun = w && a && s;
-    }
+async function setOutput(isDryRun) {
     if (isDryRun) {
         core.setOutput('hasChanges', 'false');
         core.notice('Dry run mode. No changes will be committed.', ANNOTATION_OPTIONS);
@@ -535,6 +530,17 @@ async function setOutput(config) {
         const isFileChanged = await git/* checkIsFileChanged */.gr();
         core.warning(`Dotnet Format File Changed: ${isFileChanged}`, ANNOTATION_OPTIONS);
         core.setOutput('hasChanges', isFileChanged.toString());
+    }
+}
+function checkIsDryRun(config) {
+    if (config.options?.isEabled) {
+        return config.options?.verifyNoChanges;
+    }
+    else {
+        const w = (config.whitespaceOptions?.isEabled && config.whitespaceOptions?.verifyNoChanges) || !config.whitespaceOptions?.isEabled;
+        const a = (config.analyzersOptions?.isEabled && config.analyzersOptions?.verifyNoChanges) || !config.analyzersOptions?.isEabled;
+        const s = (config.styleOptions?.isEabled && config.styleOptions?.verifyNoChanges) || !config.styleOptions?.isEabled;
+        return w && a && s;
     }
 }
 
@@ -598,13 +604,13 @@ async function checkIsFileChanged() {
     const { stdout, stderr } = await (0,execute/* execute */.h)('git', process.cwd(), ['status', '-s'], false, false);
     await (0,execute/* execute */.h)('git', process.cwd(), ['status', '-s'], false, false);
     if (stderr.join('') !== '') {
-        (0,core.error)(`Errors while checking git status for changed files. Error: ${stderr.join('\n')}`);
+        core.error(`Errors while checking git status for changed files. Error: ${stderr.join('\n')}`);
     }
     if (stdout.join('') === '') {
-        (0,core.info)('Did not find any changed files');
+        core.info('Did not find any changed files');
         return false;
     }
-    (0,core.info)('Found changed files');
+    core.info('Found changed files');
     return true;
 }
 async function comment(githubClient, message) {
@@ -612,22 +618,22 @@ async function comment(githubClient, message) {
     if (!number) {
         throw new Error('Unable to get pull request number from action event');
     }
-    (0,core.info)(`Commenting on PR #${number}`);
+    core.info(`Commenting on PR #${number}`);
     const resp = await githubClient.rest.issues.createComment({
         owner,
         repo,
         issue_number: number,
         body: message
     });
-    resp.status === 201 ? (0,core.info)('Commented on PR') : (0,core.error)(`Failed to comment on PR. Response: ${resp}`);
+    resp.status === 201 ? core.info('Commented on PR') : core.error(`Failed to comment on PR. Response: ${resp}`);
     return resp.status === 201;
 }
 async function init(workspace, username, email) {
     try {
-        (0,core.info)('Configuring git…');
+        core.info('Configuring git…');
         let result = await (0,execute/* execute */.h)(`git config --global --add safe.directory "${workspace}"`, workspace, [], true);
         if (!result.result) {
-            (0,core.error)(`Unable to configure git: ${result.stderr.join('')}`);
+            core.error(`Unable to configure git: ${result.stderr.join('')}`);
         }
         result = await (0,execute/* execute */.h)(`git config user.name "${username}"`, workspace);
         if (result.result) {
@@ -637,7 +643,7 @@ async function init(workspace, username, email) {
         return result.result;
     }
     catch (ex) {
-        (0,core.error)(`Unable to configure git: ${ex}`);
+        core.error(`Unable to configure git: ${ex}`);
         throw ex;
     }
 }
@@ -645,15 +651,17 @@ async function commit(workspace, message, branch) {
     // check what is the current branch
     const { stdout } = await (0,execute/* execute */.h)(`git branch --show-current`);
     if (stdout.join('').trim() !== branch) {
-        (0,core.info)(`Checking out ${branch}…`);
+        core.info(`It is on "${stdout.join('').trim()}" branch, Checking out "${branch}"`);
         await (0,execute/* execute */.h)(`git fetch origin ${branch} --depth=1`);
+        await (0,execute/* execute */.h)(`git stash`);
         await (0,execute/* execute */.h)(`git checkout -b ${branch} FETCH_HEAD`);
+        await (0,execute/* execute */.h)(`git stash pop`);
     }
-    (0,core.info)(`Committing changes to ${branch}…`);
+    core.info(`Committing changes to ${branch}…`);
     await (0,execute/* execute */.h)(`git add .`, workspace);
     const result = await (0,execute/* execute */.h)(`git commit -m "${message}"`, workspace);
     if (result.result) {
-        (0,core.info)('Changes committed');
+        core.info('Changes committed');
     }
     else {
         throw new Error(`Commit failed`);
@@ -664,7 +672,7 @@ const ATTEMPT_LIMIT = 3;
 const REJECTED_KEYWORDS = ['[rejected]', '[remote rejected]'];
 async function push(branch) {
     for (let attempt = 1; attempt <= ATTEMPT_LIMIT; attempt++) {
-        (0,core.info)(`Pushing changes… (attempt ${attempt} of ${ATTEMPT_LIMIT})`);
+        core.info(`Pushing changes… (attempt ${attempt} of ${ATTEMPT_LIMIT})`);
         const pushResult = await (0,execute/* execute */.h)(`git push --porcelain origin ${branch}:${branch}`, process.cwd(), [], false, true);
         const stdout = pushResult.stdout.join('');
         const stderr = pushResult.stderr.join('\n');
@@ -684,13 +692,13 @@ function wasPushRejected(stdout) {
     return REJECTED_KEYWORDS.some(keyword => stdout.includes(keyword));
 }
 async function handleRejectedPush(branch) {
-    (0,core.info)('Updates were rejected');
-    (0,core.info)('Fetching upstream changes…');
+    core.info('Updates were rejected');
+    core.info('Fetching upstream changes…');
     await (0,execute/* execute */.h)(`git fetch`);
-    (0,core.info)(`Rebasing local changes onto ${branch}…`);
+    core.info(`Rebasing local changes onto ${branch}…`);
     const result = await (0,execute/* execute */.h)(`git pull --rebase`);
     if (result.result) {
-        (0,core.info)(`Rebase successful`);
+        core.info(`Rebase successful`);
     }
     else {
         throw new Error(`Rebase failed`);
@@ -700,17 +708,17 @@ async function handleRejectedPush(branch) {
 async function UploadReportToArtifacts(reports, artifactName) {
     const artifactClient = artifact_client/* create */.U();
     if (reports.length === 0) {
-        (0,core.info)(`No reports found`);
+        core.info(`No reports found`);
         return;
     }
     const uploadResponse = await artifactClient.uploadArtifact(artifactName, reports, process.cwd(), {
         continueOnError: true
     });
     if (uploadResponse.failedItems.length > 0) {
-        (0,core.error)(`Failed to upload artifact ${artifactName}: ${uploadResponse.failedItems.join(', ')}`);
+        core.error(`Failed to upload artifact ${artifactName}: ${uploadResponse.failedItems.join(', ')}`);
     }
     else {
-        (0,core.info)(`Artifact ${artifactName} uploaded successfully`);
+        core.info(`Artifact ${artifactName} uploaded successfully`);
     }
 }
 
@@ -740,7 +748,7 @@ async function run() {
         const inputs = _common__WEBPACK_IMPORTED_MODULE_2__/* .getInputs */ .G9();
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`🔍Inputs: ${(0,util__WEBPACK_IMPORTED_MODULE_1__.inspect)(inputs)}`);
         const githubClient = _common__WEBPACK_IMPORTED_MODULE_2__/* .getOctokitRest */ .IT(inputs.authToken);
-        const finalFormatResult = await (0,_format__WEBPACK_IMPORTED_MODULE_4__/* .format */ .W)(inputs, githubClient);
+        const finalFormatResult = await (0,_format__WEBPACK_IMPORTED_MODULE_4__/* .format */ .WU)(inputs, githubClient);
         if (inputs.jscpdCheck) {
             await (0,_duplicated__WEBPACK_IMPORTED_MODULE_3__/* .duplicatedCheck */ .O)(inputs.workspace, inputs.jscpdConfigPath, inputs.jscpdCheckAsError, githubClient);
         }
