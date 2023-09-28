@@ -277,10 +277,10 @@ async function execute(cmd, cwd = process.cwd(), args = [], silent = false, igno
 
 // EXPORTS
 __nccwpck_require__.d(__webpack_exports__, {
-  "W": () => (/* binding */ format)
+  "WU": () => (/* binding */ format)
 });
 
-// UNUSED EXPORTS: setOutput
+// UNUSED EXPORTS: checkIsDryRun, setOutput
 
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
 var core = __nccwpck_require__(42186);
@@ -456,6 +456,7 @@ async function format(inputs, githubClient) {
     }
     const reportFiles = getReportFiles();
     await git/* UploadReportToArtifacts */.BC(reportFiles, common/* REPORT_ARTIFACT_NAME */.GB);
+    const isDryRun = checkIsDryRun(configOptions);
     if (finalFormatResult && github.context.eventName === 'pull_request') {
         const message = generateReport(reportFiles);
         // means that there are changes
@@ -463,17 +464,19 @@ async function format(inputs, githubClient) {
             await git/* comment */.UI(githubClient, message);
             const isRemoved = await common/* RemoveReportFiles */.VO();
             const isInit = isRemoved && (await git/* init */.S1(process.cwd(), inputs.commitUsername, inputs.commitUserEmail));
-            const currentBranch = common/* getCurrentBranch */.UJ();
-            const isCommit = isInit && (await git/* commit */.th(process.cwd(), inputs.commitMessage, currentBranch));
-            if (isCommit) {
-                await git/* push */.VF(currentBranch);
+            if (!isDryRun && reportFiles.length) {
+                const currentBranch = common/* getCurrentBranch */.UJ();
+                const isCommit = isInit && (await git/* commit */.th(process.cwd(), inputs.commitMessage, currentBranch));
+                if (isCommit) {
+                    await git/* push */.VF(currentBranch);
+                }
             }
         }
         else {
             core.notice('✅ NO CHANGES', ANNOTATION_OPTIONS);
         }
     }
-    await setOutput(configOptions);
+    await setOutput(isDryRun);
     finalFormatResult
         ? core.notice('✅ DOTNET FORMAT SUCCESS', ANNOTATION_OPTIONS)
         : core.error('DOTNET FORMAT FAILED', ANNOTATION_OPTIONS);
@@ -518,15 +521,7 @@ function getOptions(inputs) {
     core.info(`loaded options: ${(0,external_util_.inspect)(configOptions)}`);
     return configOptions;
 }
-async function setOutput(config) {
-    let isDryRun = false;
-    isDryRun = !!config.options?.isEabled && config.options?.verifyNoChanges;
-    if (!config.options?.isEabled) {
-        const w = (config.whitespaceOptions?.isEabled && config.whitespaceOptions?.verifyNoChanges) || !config.whitespaceOptions?.isEabled;
-        const a = (config.analyzersOptions?.isEabled && config.analyzersOptions?.verifyNoChanges) || !config.analyzersOptions?.isEabled;
-        const s = (config.styleOptions?.isEabled && config.styleOptions?.verifyNoChanges) || !config.styleOptions?.isEabled;
-        isDryRun = w && a && s;
-    }
+async function setOutput(isDryRun) {
     if (isDryRun) {
         core.setOutput('hasChanges', 'false');
         core.notice('Dry run mode. No changes will be committed.', ANNOTATION_OPTIONS);
@@ -535,6 +530,17 @@ async function setOutput(config) {
         const isFileChanged = await git/* checkIsFileChanged */.gr();
         core.warning(`Dotnet Format File Changed: ${isFileChanged}`, ANNOTATION_OPTIONS);
         core.setOutput('hasChanges', isFileChanged.toString());
+    }
+}
+function checkIsDryRun(config) {
+    if (config.options?.isEabled) {
+        return config.options?.verifyNoChanges;
+    }
+    else {
+        const w = (config.whitespaceOptions?.isEabled && config.whitespaceOptions?.verifyNoChanges) || !config.whitespaceOptions?.isEabled;
+        const a = (config.analyzersOptions?.isEabled && config.analyzersOptions?.verifyNoChanges) || !config.analyzersOptions?.isEabled;
+        const s = (config.styleOptions?.isEabled && config.styleOptions?.verifyNoChanges) || !config.styleOptions?.isEabled;
+        return w && a && s;
     }
 }
 
@@ -742,7 +748,7 @@ async function run() {
         const inputs = _common__WEBPACK_IMPORTED_MODULE_2__/* .getInputs */ .G9();
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`🔍Inputs: ${(0,util__WEBPACK_IMPORTED_MODULE_1__.inspect)(inputs)}`);
         const githubClient = _common__WEBPACK_IMPORTED_MODULE_2__/* .getOctokitRest */ .IT(inputs.authToken);
-        const finalFormatResult = await (0,_format__WEBPACK_IMPORTED_MODULE_4__/* .format */ .W)(inputs, githubClient);
+        const finalFormatResult = await (0,_format__WEBPACK_IMPORTED_MODULE_4__/* .format */ .WU)(inputs, githubClient);
         if (inputs.jscpdCheck) {
             await (0,_duplicated__WEBPACK_IMPORTED_MODULE_3__/* .duplicatedCheck */ .O)(inputs.workspace, inputs.jscpdConfigPath, inputs.jscpdCheckAsError, githubClient);
         }

@@ -34,6 +34,7 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
     }
     const reportFiles = dotnet.getReportFiles();
     await git.UploadReportToArtifacts(reportFiles, REPORT_ARTIFACT_NAME);
+    const isDryRun = checkIsDryRun(configOptions);
     if (finalFormatResult && context.eventName === 'pull_request') {
         const message = dotnet.generateReport(reportFiles);
         // means that there are changes
@@ -41,16 +42,18 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
             await git.comment(githubClient, message);
             const isRemoved = await Common.RemoveReportFiles();
             const isInit = isRemoved && (await git.init(process.cwd(), inputs.commitUsername, inputs.commitUserEmail));
-            const currentBranch = Common.getCurrentBranch();
-            const isCommit = isInit && (await git.commit(process.cwd(), inputs.commitMessage, currentBranch));
-            if (isCommit) {
-                await git.push(currentBranch);
+            if (!isDryRun && reportFiles.length) {
+                const currentBranch = Common.getCurrentBranch();
+                const isCommit = isInit && (await git.commit(process.cwd(), inputs.commitMessage, currentBranch));
+                if (isCommit) {
+                    await git.push(currentBranch);
+                }
             }
         } else {
             core.notice('✅ NO CHANGES', dotnet.ANNOTATION_OPTIONS);
         }
     }
-    await setOutput(configOptions);
+    await setOutput(isDryRun);
     finalFormatResult
         ? core.notice('✅ DOTNET FORMAT SUCCESS', dotnet.ANNOTATION_OPTIONS)
         : core.error('DOTNET FORMAT FAILED', dotnet.ANNOTATION_OPTIONS);
@@ -97,16 +100,7 @@ function getOptions(inputs: IInputs): Partial<IDotnetFormatConfig> {
     return configOptions;
 }
 
-export async function setOutput(config: Partial<IDotnetFormatConfig>): Promise<void> {
-    let isDryRun = false;
-    isDryRun = !!config.options?.isEabled && config.options?.verifyNoChanges;
-    if (!config.options?.isEabled) {
-        const w = (config.whitespaceOptions?.isEabled && config.whitespaceOptions?.verifyNoChanges) || !config.whitespaceOptions?.isEabled;
-        const a = (config.analyzersOptions?.isEabled && config.analyzersOptions?.verifyNoChanges) || !config.analyzersOptions?.isEabled;
-        const s = (config.styleOptions?.isEabled && config.styleOptions?.verifyNoChanges) || !config.styleOptions?.isEabled;
-        isDryRun = w && a && s;
-    }
-
+export async function setOutput(isDryRun: boolean): Promise<void> {
     if (isDryRun) {
         core.setOutput('hasChanges', 'false');
         core.notice('Dry run mode. No changes will be committed.', dotnet.ANNOTATION_OPTIONS);
@@ -114,5 +108,15 @@ export async function setOutput(config: Partial<IDotnetFormatConfig>): Promise<v
         const isFileChanged = await git.checkIsFileChanged();
         core.warning(`Dotnet Format File Changed: ${isFileChanged}`, dotnet.ANNOTATION_OPTIONS);
         core.setOutput('hasChanges', isFileChanged.toString());
+    }
+}
+export function checkIsDryRun(config: Partial<IDotnetFormatConfig>): boolean {
+    if (config.options?.isEabled) {
+        return config.options?.verifyNoChanges;
+    } else {
+        const w = (config.whitespaceOptions?.isEabled && config.whitespaceOptions?.verifyNoChanges) || !config.whitespaceOptions?.isEabled;
+        const a = (config.analyzersOptions?.isEabled && config.analyzersOptions?.verifyNoChanges) || !config.analyzersOptions?.isEabled;
+        const s = (config.styleOptions?.isEabled && config.styleOptions?.verifyNoChanges) || !config.styleOptions?.isEabled;
+        return w && a && s;
     }
 }
