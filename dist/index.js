@@ -286,8 +286,6 @@ __nccwpck_require__.d(__webpack_exports__, {
 var core = __nccwpck_require__(42186);
 // EXTERNAL MODULE: ./node_modules/@actions/github/lib/github.js
 var github = __nccwpck_require__(95438);
-// EXTERNAL MODULE: external "util"
-var external_util_ = __nccwpck_require__(73837);
 // EXTERNAL MODULE: ./lib/common.js
 var common = __nccwpck_require__(86979);
 // EXTERNAL MODULE: external "fs"
@@ -295,6 +293,8 @@ var external_fs_ = __nccwpck_require__(57147);
 // EXTERNAL MODULE: external "path"
 var external_path_ = __nccwpck_require__(71017);
 var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_);
+// EXTERNAL MODULE: external "util"
+var external_util_ = __nccwpck_require__(73837);
 // EXTERNAL MODULE: ./lib/execute.js
 var execute = __nccwpck_require__(3532);
 // EXTERNAL MODULE: ./lib/modals.js
@@ -319,7 +319,6 @@ function setDotnetEnvironmentVariables() {
     process.env.DOTNET_NOLOGO = 'true';
 }
 function generateFormatCommandArgs(config, workspace, changedFiles) {
-    core.info(`loaded options: ${(0,external_util_.inspect)(config)}`);
     if (!workspace) {
         core.setFailed('Specify PROJECT | SOLUTION, .sln or .csproj');
         return [];
@@ -434,7 +433,6 @@ var readConfig = __nccwpck_require__(22094);
 
 
 
-
 async function format(inputs, githubClient) {
     const configOptions = getOptions(inputs);
     setDotnetEnvironmentVariables();
@@ -518,7 +516,6 @@ function getOptions(inputs) {
         }
     };
     const configOptions = (0,readConfig/* readConfig */.z)(defaultOptions, inputs.dotnetFormatConfigPath, inputs.workspace, '.dotnet-format.json');
-    core.info(`loaded options: ${(0,external_util_.inspect)(configOptions)}`);
     return configOptions;
 }
 async function setOutput(isDryRun) {
