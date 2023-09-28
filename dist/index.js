@@ -95,7 +95,7 @@ function formatOnlyChangedFiles(onlyChangedFiles) {
     if (onlyChangedFiles && ['issue_comment', 'pull_request'].includes(_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.eventName)) {
         return true;
     }
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.warning('Formatting only changed files is available on the issue_comment and pull_request events only');
+    onlyChangedFiles && _actions_core__WEBPACK_IMPORTED_MODULE_0__.warning('Formatting only changed files is available on the issue_comment and pull_request events only');
     return false;
 }
 
