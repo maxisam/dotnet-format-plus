@@ -1,6 +1,7 @@
 import { info, warning } from '@actions/core';
 import deepmerge from 'deepmerge';
 import * as fs from 'fs';
+import yaml from 'js-yaml';
 import { resolve } from 'path';
 import { inspect } from 'util';
 
@@ -16,7 +17,14 @@ import { inspect } from 'util';
  */
 export function readJSONSync<T>(path: string): Partial<T> {
     const data = fs.readFileSync(path, 'utf-8');
-    return JSON.parse(data);
+    const ext = path.split('.').pop()?.toLowerCase();
+    if (ext === 'json') {
+        return JSON.parse(data);
+    } else if (ext === 'yaml' || ext === 'yml') {
+        return yaml.load(data) as Partial<T>;
+    } else {
+        throw new Error(`Unsupported file extension: ${ext}`);
+    }
 }
 
 /**
@@ -32,10 +40,10 @@ function arrayMergeDedupe<T>(source: T[], target: T[]): T[] {
 
 export function readConfig<T>(defaultOptions: Partial<T>, configName: string, workspace: string, defaultConfigName: string): Partial<T> {
     const configFile = resolve(configName || defaultConfigName);
-    const workspaceConfig = resolve(workspace, defaultConfigName);
+    const workspaceConfig = resolve(workspace, configName || defaultConfigName);
 
     const configExists = fs.existsSync(configFile);
-    const workspaceConfigExists = fs.existsSync(workspaceConfig);
+    const workspaceConfigExists = workspaceConfig !== configFile && fs.existsSync(workspaceConfig);
 
     let resultData: Partial<T> = defaultOptions || {};
 
