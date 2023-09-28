@@ -41,6 +41,7 @@ function getInputs() {
         onlyChangedFiles: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.onlyChangedFiles */ .A.onlyChangedFiles) === 'true',
         failFast: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.failFast */ .A.failFast) === 'true',
         workspace: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.workspace */ .A.workspace),
+        projectFileName: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.projectFileName */ .A.projectFileName),
         severityLevel: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.severityLevel */ .A.severityLevel),
         logLevel: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.logLevel */ .A.logLevel),
         commitUsername: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.commitUsername */ .A.commitUsername),
@@ -481,6 +482,7 @@ async function format(inputs, githubClient) {
 function getOptions(inputs) {
     const defaultOptions = {
         nugetConfigPath: inputs.nugetConfigPath,
+        projectFileName: inputs.projectFileName,
         onlyChangedFiles: inputs.onlyChangedFiles,
         options: {
             isEabled: true,
@@ -776,6 +778,7 @@ var INPUTS;
     INPUTS["onlyChangedFiles"] = "onlyChangedFiles";
     INPUTS["failFast"] = "failFast";
     INPUTS["workspace"] = "workspace";
+    INPUTS["projectFileName"] = "projectFileName";
     INPUTS["severityLevel"] = "severityLevel";
     INPUTS["logLevel"] = "logLevel";
     INPUTS["commitUsername"] = "commitUsername";
