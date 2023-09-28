@@ -1,4 +1,4 @@
-import { info, warning } from '@actions/core';
+import { info } from '@actions/core';
 import deepmerge from 'deepmerge';
 import * as fs from 'fs';
 import yaml from 'js-yaml';
@@ -53,13 +53,7 @@ export function readConfig<T>(defaultOptions: Partial<T>, configName: string, wo
     if (workspaceConfigExists) {
         resultData = deepmerge(resultData, readJSONSync<T>(workspaceConfig), { arrayMerge: arrayMergeDedupe });
     }
-    if (configExists || workspaceConfigExists) {
-        const resultConfigPath = workspaceConfigExists ? workspaceConfig : configFile;
-        const result = { config: resultConfigPath, ...resultData };
-        info(`🔎 loaded config: ${inspect(result)}`);
-        return result;
-    }
 
-    warning(`🔎 config: ${configName} not found`);
-    return {};
+    info(`🔎 loaded config: ${inspect(resultData)}`);
+    return resultData;
 }
