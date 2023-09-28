@@ -567,12 +567,15 @@ var github = __nccwpck_require__(95438);
 const external_console_namespaceObject = require("console");
 // EXTERNAL MODULE: external "path"
 var external_path_ = __nccwpck_require__(71017);
+// EXTERNAL MODULE: external "util"
+var external_util_ = __nccwpck_require__(73837);
 ;// CONCATENATED MODULE: ./lib/const.js
 const includedFileTypes = ['.cs', '.vb', '.cspoj', '.vbproj', '.fs', '.fsproj', '.cshtml', '.vbhtml'];
 
 // EXTERNAL MODULE: ./lib/execute.js
 var execute = __nccwpck_require__(3532);
 ;// CONCATENATED MODULE: ./lib/git.js
+
 
 
 
@@ -598,13 +601,13 @@ async function checkIsFileChanged() {
     const { stdout, stderr } = await (0,execute/* execute */.h)('git', process.cwd(), ['status', '-s'], false, false);
     await (0,execute/* execute */.h)('git', process.cwd(), ['status', '-s'], false, false);
     if (stderr.join('') !== '') {
-        (0,core.error)(`Errors while checking git status for changed files. Error: ${stderr.join('\n')}`);
+        core.error(`Errors while checking git status for changed files. Error: ${stderr.join('\n')}`);
     }
     if (stdout.join('') === '') {
-        (0,core.info)('Did not find any changed files');
+        core.info('Did not find any changed files');
         return false;
     }
-    (0,core.info)('Found changed files');
+    core.info('Found changed files');
     return true;
 }
 async function comment(githubClient, message) {
@@ -612,22 +615,22 @@ async function comment(githubClient, message) {
     if (!number) {
         throw new Error('Unable to get pull request number from action event');
     }
-    (0,core.info)(`Commenting on PR #${number}`);
+    core.info(`Commenting on PR #${number}`);
     const resp = await githubClient.rest.issues.createComment({
         owner,
         repo,
         issue_number: number,
         body: message
     });
-    resp.status === 201 ? (0,core.info)('Commented on PR') : (0,core.error)(`Failed to comment on PR. Response: ${resp}`);
+    resp.status === 201 ? core.info('Commented on PR') : core.error(`Failed to comment on PR. Response: ${resp}`);
     return resp.status === 201;
 }
 async function init(workspace, username, email) {
     try {
-        (0,core.info)('Configuring git…');
+        core.info('Configuring git…');
         let result = await (0,execute/* execute */.h)(`git config --global --add safe.directory "${workspace}"`, workspace, [], true);
         if (!result.result) {
-            (0,core.error)(`Unable to configure git: ${result.stderr.join('')}`);
+            core.error(`Unable to configure git: ${result.stderr.join('')}`);
         }
         result = await (0,execute/* execute */.h)(`git config user.name "${username}"`, workspace);
         if (result.result) {
@@ -637,23 +640,24 @@ async function init(workspace, username, email) {
         return result.result;
     }
     catch (ex) {
-        (0,core.error)(`Unable to configure git: ${ex}`);
+        core.error(`Unable to configure git: ${ex}`);
         throw ex;
     }
 }
 async function commit(workspace, message, branch) {
     // check what is the current branch
-    const { stdout } = await (0,execute/* execute */.h)(`git branch --show-current`);
+    const { stdout, stderr } = await (0,execute/* execute */.h)(`git branch --show-current`);
+    core.info(`🔍 "${(0,external_util_.inspect)(stdout)}", ${(0,external_util_.inspect)(stderr)}`);
     if (stdout.join('').trim() !== branch) {
-        (0,core.info)(`It is on "${stdout.join('').trim()}, "Checking out "${branch}"`);
+        core.info(`It is on "${stdout.join('').trim()}", Checking out "${branch}"`);
         await (0,execute/* execute */.h)(`git fetch origin ${branch} --depth=1`);
         await (0,execute/* execute */.h)(`git checkout -b ${branch} FETCH_HEAD`);
     }
-    (0,core.info)(`Committing changes to ${branch}…`);
+    core.info(`Committing changes to ${branch}…`);
     await (0,execute/* execute */.h)(`git add .`, workspace);
     const result = await (0,execute/* execute */.h)(`git commit -m "${message}"`, workspace);
     if (result.result) {
-        (0,core.info)('Changes committed');
+        core.info('Changes committed');
     }
     else {
         throw new Error(`Commit failed`);
@@ -664,7 +668,7 @@ const ATTEMPT_LIMIT = 3;
 const REJECTED_KEYWORDS = ['[rejected]', '[remote rejected]'];
 async function push(branch) {
     for (let attempt = 1; attempt <= ATTEMPT_LIMIT; attempt++) {
-        (0,core.info)(`Pushing changes… (attempt ${attempt} of ${ATTEMPT_LIMIT})`);
+        core.info(`Pushing changes… (attempt ${attempt} of ${ATTEMPT_LIMIT})`);
         const pushResult = await (0,execute/* execute */.h)(`git push --porcelain origin ${branch}:${branch}`, process.cwd(), [], false, true);
         const stdout = pushResult.stdout.join('');
         const stderr = pushResult.stderr.join('\n');
@@ -684,13 +688,13 @@ function wasPushRejected(stdout) {
     return REJECTED_KEYWORDS.some(keyword => stdout.includes(keyword));
 }
 async function handleRejectedPush(branch) {
-    (0,core.info)('Updates were rejected');
-    (0,core.info)('Fetching upstream changes…');
+    core.info('Updates were rejected');
+    core.info('Fetching upstream changes…');
     await (0,execute/* execute */.h)(`git fetch`);
-    (0,core.info)(`Rebasing local changes onto ${branch}…`);
+    core.info(`Rebasing local changes onto ${branch}…`);
     const result = await (0,execute/* execute */.h)(`git pull --rebase`);
     if (result.result) {
-        (0,core.info)(`Rebase successful`);
+        core.info(`Rebase successful`);
     }
     else {
         throw new Error(`Rebase failed`);
@@ -700,17 +704,17 @@ async function handleRejectedPush(branch) {
 async function UploadReportToArtifacts(reports, artifactName) {
     const artifactClient = artifact_client/* create */.U();
     if (reports.length === 0) {
-        (0,core.info)(`No reports found`);
+        core.info(`No reports found`);
         return;
     }
     const uploadResponse = await artifactClient.uploadArtifact(artifactName, reports, process.cwd(), {
         continueOnError: true
     });
     if (uploadResponse.failedItems.length > 0) {
-        (0,core.error)(`Failed to upload artifact ${artifactName}: ${uploadResponse.failedItems.join(', ')}`);
+        core.error(`Failed to upload artifact ${artifactName}: ${uploadResponse.failedItems.join(', ')}`);
     }
     else {
-        (0,core.info)(`Artifact ${artifactName} uploaded successfully`);
+        core.info(`Artifact ${artifactName} uploaded successfully`);
     }
 }
 
