@@ -80,7 +80,7 @@ export async function commit(workspace: string, message: string, branch: string)
     // check what is the current branch
     const { stdout } = await execute(`git branch --show-current`);
     if (stdout.join('').trim() !== branch) {
-        info(`Checking out ${branch}…`);
+        info(`It is on "${stdout.join('').trim()}, "Checking out "${branch}"`);
         await execute(`git fetch origin ${branch} --depth=1`);
         await execute(`git checkout -b ${branch} FETCH_HEAD`);
     }

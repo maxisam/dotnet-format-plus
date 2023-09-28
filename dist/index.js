@@ -84,7 +84,7 @@ function getOctokitRest(authToken, userAgent = 'github-action') {
 function getCurrentBranch() {
     const branch = _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload?.pull_request?.head?.ref || _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.ref;
     const current = branch.replace('refs/heads/', '');
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Current branch: ${current}`);
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Current branch: "${current}"`);
     return current;
 }
 async function RemoveReportFiles() {
@@ -645,7 +645,7 @@ async function commit(workspace, message, branch) {
     // check what is the current branch
     const { stdout } = await (0,execute/* execute */.h)(`git branch --show-current`);
     if (stdout.join('').trim() !== branch) {
-        (0,core.info)(`Checking out ${branch}…`);
+        (0,core.info)(`It is on "${stdout.join('').trim()}, "Checking out "${branch}"`);
         await (0,execute/* execute */.h)(`git fetch origin ${branch} --depth=1`);
         await (0,execute/* execute */.h)(`git checkout -b ${branch} FETCH_HEAD`);
     }

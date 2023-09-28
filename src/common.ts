@@ -59,7 +59,7 @@ export function getOctokitRest(authToken: string, userAgent = 'github-action'): 
 export function getCurrentBranch(): string {
     const branch = context.payload?.pull_request?.head?.ref || context.ref;
     const current = branch.replace('refs/heads/', '');
-    core.info(`Current branch: ${current}`);
+    core.info(`Current branch: "${current}"`);
     return current;
 }
 
