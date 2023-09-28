@@ -4,7 +4,7 @@ import { Octokit } from '@octokit/rest';
 import fetch from 'node-fetch';
 import { inspect } from 'util';
 import { execute } from './execute';
-import { FixLevelType, FormatOptions, IInputs, INPUTS } from './modals';
+import { FixLevelType, IInputs, INPUTS, VerbosityType } from './modals';
 
 export const REPORT_PATH = `${process.cwd()}/.dotnet-format`;
 export const REPORT_ARTIFACT_NAME = 'dotnet-format-report';
@@ -15,14 +15,8 @@ export function getInputs(): IInputs {
         onlyChangedFiles: core.getInput(INPUTS.onlyChangedFiles) === 'true',
         failFast: core.getInput(INPUTS.failFast) === 'true',
         workspace: core.getInput(INPUTS.workspace),
-        include: core.getInput(INPUTS.include),
-        exclude: core.getInput(INPUTS.exclude),
-        skipFixWhitespace: core.getInput(INPUTS.skipFixWhitespace) === 'true',
-        skipFixAnalyzers: core.getInput(INPUTS.skipFixAnalyzers) === 'true',
-        skipFixStyle: core.getInput(INPUTS.skipFixStyle) === 'true',
-        styleSeverityLevel: core.getInput(INPUTS.styleSeverityLevel) as FixLevelType,
-        analyzersSeverityLevel: core.getInput(INPUTS.analyzersSeverityLevel) as FixLevelType,
-        logLevel: core.getInput(INPUTS.logLevel),
+        severityLevel: core.getInput(INPUTS.severityLevel) as FixLevelType,
+        logLevel: core.getInput(INPUTS.logLevel) as VerbosityType,
         commitUsername: core.getInput(INPUTS.commitUsername),
         commitUserEmail: core.getInput(INPUTS.commitUserEmail),
         commitMessage: core.getInput(INPUTS.commitMessage),
@@ -34,46 +28,6 @@ export function getInputs(): IInputs {
     };
     core.debug(`Inputs: ${inspect(inputs)}`);
     return inputs;
-}
-
-export function getFormatOptions(inputs: IInputs): FormatOptions {
-    const {
-        action,
-        exclude,
-        skipFixAnalyzers,
-        skipFixStyle,
-        skipFixWhitespace,
-        styleSeverityLevel,
-        analyzersSeverityLevel,
-        include,
-        logLevel,
-        onlyChangedFiles,
-        workspace
-    } = inputs;
-
-    const formatOptions: FormatOptions = {
-        onlyChangedFiles,
-        skipFixWhitespace,
-        skipFixAnalyzers,
-        skipFixStyle,
-        styleSeverityLevel,
-        analyzersSeverityLevel,
-        logLevel,
-        dryRun: action === 'check'
-    };
-
-    if (include) {
-        formatOptions.include = include;
-    }
-
-    if (workspace) {
-        formatOptions.workspace = workspace;
-    }
-
-    if (exclude) {
-        formatOptions.exclude = exclude;
-    }
-    return formatOptions;
 }
 
 export function getOctokitRest(authToken: string, userAgent = 'github-action'): Octokit {

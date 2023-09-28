@@ -6,13 +6,7 @@ export enum INPUTS {
     onlyChangedFiles = 'onlyChangedFiles',
     failFast = 'failFast',
     workspace = 'workspace',
-    include = 'include',
-    exclude = 'exclude',
-    skipFixWhitespace = 'skipFixWhitespace',
-    skipFixAnalyzers = 'skipFixAnalyzers',
-    skipFixStyle = 'skipFixStyle',
-    styleSeverityLevel = 'styleSeverityLevel',
-    analyzersSeverityLevel = 'analyzersSeverityLevel',
+    severityLevel = 'severityLevel',
     logLevel = 'logLevel',
     commitUsername = 'commitUsername',
     commitUserEmail = 'commitUserEmail',
@@ -30,14 +24,8 @@ export interface IInputs {
     onlyChangedFiles: boolean;
     failFast: boolean;
     workspace: string;
-    include?: string;
-    exclude?: string;
-    skipFixWhitespace: boolean;
-    skipFixAnalyzers: boolean;
-    skipFixStyle: boolean;
-    styleSeverityLevel: FixLevelType;
-    analyzersSeverityLevel: FixLevelType;
-    logLevel: string;
+    severityLevel: FixLevelType;
+    logLevel: VerbosityType;
     commitUsername: string;
     commitUserEmail: string;
     commitMessage: string;

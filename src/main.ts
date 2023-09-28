@@ -13,6 +13,9 @@ async function run(): Promise<boolean> {
         if (inputs.jscpdCheck) {
             await duplicatedCheck(inputs.workspace, inputs.jscpdConfigPath, inputs.jscpdCheckAsError, githubClient);
         }
+        if (!finalFormatResult && inputs.failFast) {
+            core.setFailed(`Action failed with format issue`);
+        }
         return finalFormatResult;
     } catch (error) {
         if (error instanceof Error) {

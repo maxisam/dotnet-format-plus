@@ -10,14 +10,13 @@ import { IDotnetFormatConfig, IInputs } from './modals';
 import { readConfig } from './readConfig';
 
 export async function format(inputs: IInputs, githubClient: InstanceType<typeof Octokit>): Promise<boolean> {
-    const configOptions = getOptions(inputs.dotnetFormatConfigPath, inputs.workspace);
+    const configOptions = getOptions(inputs);
     dotnet.setDotnetEnvironmentVariables();
     configOptions.nugetConfigPath && (await dotnet.nugetRestore(inputs.nugetConfigPath, inputs.workspace));
 
-    const options = Common.getFormatOptions(inputs);
     let changedFiles: string[] = [];
 
-    if (Common.formatOnlyChangedFiles(options.onlyChangedFiles)) {
+    if (Common.formatOnlyChangedFiles(configOptions.onlyChangedFiles || false)) {
         changedFiles = await git.getPullRequestFiles(githubClient);
         if (!changedFiles.length) {
             core.warning('No files found for formatting', dotnet.ANNOTATION_OPTIONS);
@@ -58,8 +57,41 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
     return finalFormatResult;
 }
 
-function getOptions(configPath: string, workspace: string): Partial<IDotnetFormatConfig> {
-    const configOptions = readConfig<IDotnetFormatConfig>(configPath, workspace, '.dotnet-format.json');
+function getOptions(inputs: IInputs): Partial<IDotnetFormatConfig> {
+    const defaultOptions: Partial<IDotnetFormatConfig> = {
+        nugetConfigPath: inputs.nugetConfigPath,
+        onlyChangedFiles: inputs.onlyChangedFiles,
+        options: {
+            isEabled: true,
+            verifyNoChanges: false,
+            severity: inputs.severityLevel,
+            verbosity: inputs.logLevel,
+            noRestore: !!inputs.nugetConfigPath
+        },
+        whitespaceOptions: {
+            isEabled: false,
+            verifyNoChanges: false,
+            folder: true,
+            severity: inputs.severityLevel,
+            verbosity: inputs.logLevel,
+            noRestore: !!inputs.nugetConfigPath
+        },
+        analyzersOptions: {
+            isEabled: false,
+            verifyNoChanges: false,
+            severity: inputs.severityLevel,
+            verbosity: inputs.logLevel,
+            noRestore: !!inputs.nugetConfigPath
+        },
+        styleOptions: {
+            isEabled: false,
+            verifyNoChanges: false,
+            severity: inputs.severityLevel,
+            verbosity: inputs.logLevel,
+            noRestore: !!inputs.dotnetFormatConfigPath
+        }
+    };
+    const configOptions = readConfig<IDotnetFormatConfig>(defaultOptions, inputs.dotnetFormatConfigPath, inputs.workspace, '.dotnet-format.json');
     core.info(`loaded options: ${inspect(configOptions)}`);
     return configOptions;
 }

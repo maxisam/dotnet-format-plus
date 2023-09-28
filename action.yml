@@ -35,36 +35,8 @@ inputs:
     required: false
     default: ""
 
-  include:
-    description: "The files to include, delimited by space."
-    required: false
-
-  exclude:
-    description: "The files to exclude, delimited by space."
-    required: false
-
-  skipFixWhitespace:
-    description: "Skip whitespace fixes."
-    required: false
-    default: "false"
-
-  skipFixAnalyzers:
-    description: "Skip analyzer fixes."
-    required: false
-    default: "false"
-
-  skipFixStyle:
-    description: "Skip style fixes."
-    required: false
-    default: "false"
-
-  styleSeverityLevel:
+  severityLevel:
     description: " <error|info|warn> Fixes styles according to formatting rules."
-    required: false
-    default: "warn"
-
-  analyzersSeverityLevel:
-    description: " <error|info|warn> Fixes analyzers according to formatting rules."
     required: false
     default: "warn"
 
@@ -92,6 +64,7 @@ inputs:
     description: "Path to dotnet format config file"
     required: false
     default: ".dotnet-format.json"
+
   jscpdCheck:
     description: "Run jscpd to check for code duplication"
     required: false

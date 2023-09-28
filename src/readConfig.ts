@@ -30,14 +30,14 @@ function arrayMergeDedupe<T>(source: T[], target: T[]): T[] {
     return Array.from(new Set([...source, ...target]));
 }
 
-export function readConfig<T>(config: string, workspace: string, defaultConfig: string): Partial<T> {
-    const configFile = resolve(config || defaultConfig);
-    const workspaceConfig = resolve(workspace, defaultConfig);
+export function readConfig<T>(defaultOptions: Partial<T>, configName: string, workspace: string, defaultConfigName: string): Partial<T> {
+    const configFile = resolve(configName || defaultConfigName);
+    const workspaceConfig = resolve(workspace, defaultConfigName);
 
     const configExists = fs.existsSync(configFile);
     const workspaceConfigExists = fs.existsSync(workspaceConfig);
 
-    let resultData: Partial<T> = {};
+    let resultData: Partial<T> = defaultOptions || {};
 
     if (configExists) {
         resultData = deepmerge(resultData, readJSONSync<T>(configFile), { arrayMerge: arrayMergeDedupe });
@@ -52,6 +52,6 @@ export function readConfig<T>(config: string, workspace: string, defaultConfig: 
         return result;
     }
 
-    warning(`🔎 config: ${config} not found`);
+    warning(`🔎 config: ${configName} not found`);
     return {};
 }

@@ -12,8 +12,7 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /* harmony export */   "Pw": () => (/* binding */ formatOnlyChangedFiles),
 /* harmony export */   "UJ": () => (/* binding */ getCurrentBranch),
 /* harmony export */   "VO": () => (/* binding */ RemoveReportFiles),
-/* harmony export */   "kG": () => (/* binding */ REPORT_PATH),
-/* harmony export */   "oE": () => (/* binding */ getFormatOptions)
+/* harmony export */   "kG": () => (/* binding */ REPORT_PATH)
 /* harmony export */ });
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(42186);
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
@@ -42,13 +41,7 @@ function getInputs() {
         onlyChangedFiles: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.onlyChangedFiles */ .A.onlyChangedFiles) === 'true',
         failFast: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.failFast */ .A.failFast) === 'true',
         workspace: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.workspace */ .A.workspace),
-        include: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.include */ .A.include),
-        exclude: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.exclude */ .A.exclude),
-        skipFixWhitespace: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.skipFixWhitespace */ .A.skipFixWhitespace) === 'true',
-        skipFixAnalyzers: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.skipFixAnalyzers */ .A.skipFixAnalyzers) === 'true',
-        skipFixStyle: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.skipFixStyle */ .A.skipFixStyle) === 'true',
-        styleSeverityLevel: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.styleSeverityLevel */ .A.styleSeverityLevel),
-        analyzersSeverityLevel: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.analyzersSeverityLevel */ .A.analyzersSeverityLevel),
+        severityLevel: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.severityLevel */ .A.severityLevel),
         logLevel: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.logLevel */ .A.logLevel),
         commitUsername: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.commitUsername */ .A.commitUsername),
         commitUserEmail: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.commitUserEmail */ .A.commitUserEmail),
@@ -61,29 +54,6 @@ function getInputs() {
     };
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Inputs: ${(0,util__WEBPACK_IMPORTED_MODULE_3__.inspect)(inputs)}`);
     return inputs;
-}
-function getFormatOptions(inputs) {
-    const { action, exclude, skipFixAnalyzers, skipFixStyle, skipFixWhitespace, styleSeverityLevel, analyzersSeverityLevel, include, logLevel, onlyChangedFiles, workspace } = inputs;
-    const formatOptions = {
-        onlyChangedFiles,
-        skipFixWhitespace,
-        skipFixAnalyzers,
-        skipFixStyle,
-        styleSeverityLevel,
-        analyzersSeverityLevel,
-        logLevel,
-        dryRun: action === 'check'
-    };
-    if (include) {
-        formatOptions.include = include;
-    }
-    if (workspace) {
-        formatOptions.workspace = workspace;
-    }
-    if (exclude) {
-        formatOptions.exclude = exclude;
-    }
-    return formatOptions;
 }
 function getOctokitRest(authToken, userAgent = 'github-action') {
     try {
@@ -188,7 +158,7 @@ async function duplicatedCheck(workspace, jscpdConfigPath, jscpdCheckAsError, gi
     }
 }
 function getOptions(jscpdConfigPath, workspace, cwd) {
-    const configOptions = (0,_readConfig__WEBPACK_IMPORTED_MODULE_7__/* .readConfig */ .z)(jscpdConfigPath, workspace, '.jscpd.json');
+    const configOptions = (0,_readConfig__WEBPACK_IMPORTED_MODULE_7__/* .readConfig */ .z)({}, jscpdConfigPath, workspace, '.jscpd.json');
     const defaultOptions = {
         path: [`${workspace}`],
         reporters: ['markdown', 'json', 'consoleFull'],
@@ -465,12 +435,11 @@ var readConfig = __nccwpck_require__(719);
 
 
 async function format(inputs, githubClient) {
-    const configOptions = getOptions(inputs.dotnetFormatConfigPath, inputs.workspace);
+    const configOptions = getOptions(inputs);
     setDotnetEnvironmentVariables();
     configOptions.nugetConfigPath && (await nugetRestore(inputs.nugetConfigPath, inputs.workspace));
-    const options = common/* getFormatOptions */.oE(inputs);
     let changedFiles = [];
-    if (common/* formatOnlyChangedFiles */.Pw(options.onlyChangedFiles)) {
+    if (common/* formatOnlyChangedFiles */.Pw(configOptions.onlyChangedFiles || false)) {
         changedFiles = await git/* getPullRequestFiles */.p0(githubClient);
         if (!changedFiles.length) {
             core.warning('No files found for formatting', ANNOTATION_OPTIONS);
@@ -509,8 +478,41 @@ async function format(inputs, githubClient) {
         : core.error('DOTNET FORMAT FAILED', ANNOTATION_OPTIONS);
     return finalFormatResult;
 }
-function getOptions(configPath, workspace) {
-    const configOptions = (0,readConfig/* readConfig */.z)(configPath, workspace, '.dotnet-format.json');
+function getOptions(inputs) {
+    const defaultOptions = {
+        nugetConfigPath: inputs.nugetConfigPath,
+        onlyChangedFiles: inputs.onlyChangedFiles,
+        options: {
+            isEabled: true,
+            verifyNoChanges: false,
+            severity: inputs.severityLevel,
+            verbosity: inputs.logLevel,
+            noRestore: !!inputs.nugetConfigPath
+        },
+        whitespaceOptions: {
+            isEabled: false,
+            verifyNoChanges: false,
+            folder: true,
+            severity: inputs.severityLevel,
+            verbosity: inputs.logLevel,
+            noRestore: !!inputs.nugetConfigPath
+        },
+        analyzersOptions: {
+            isEabled: false,
+            verifyNoChanges: false,
+            severity: inputs.severityLevel,
+            verbosity: inputs.logLevel,
+            noRestore: !!inputs.nugetConfigPath
+        },
+        styleOptions: {
+            isEabled: false,
+            verifyNoChanges: false,
+            severity: inputs.severityLevel,
+            verbosity: inputs.logLevel,
+            noRestore: !!inputs.dotnetFormatConfigPath
+        }
+    };
+    const configOptions = (0,readConfig/* readConfig */.z)(defaultOptions, inputs.dotnetFormatConfigPath, inputs.workspace, '.dotnet-format.json');
     core.info(`loaded options: ${(0,external_util_.inspect)(configOptions)}`);
     return configOptions;
 }
@@ -740,6 +742,9 @@ async function run() {
         if (inputs.jscpdCheck) {
             await (0,_duplicated__WEBPACK_IMPORTED_MODULE_3__/* .duplicatedCheck */ .O)(inputs.workspace, inputs.jscpdConfigPath, inputs.jscpdCheckAsError, githubClient);
         }
+        if (!finalFormatResult && inputs.failFast) {
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`Action failed with format issue`);
+        }
         return finalFormatResult;
     }
     catch (error) {
@@ -771,13 +776,7 @@ var INPUTS;
     INPUTS["onlyChangedFiles"] = "onlyChangedFiles";
     INPUTS["failFast"] = "failFast";
     INPUTS["workspace"] = "workspace";
-    INPUTS["include"] = "include";
-    INPUTS["exclude"] = "exclude";
-    INPUTS["skipFixWhitespace"] = "skipFixWhitespace";
-    INPUTS["skipFixAnalyzers"] = "skipFixAnalyzers";
-    INPUTS["skipFixStyle"] = "skipFixStyle";
-    INPUTS["styleSeverityLevel"] = "styleSeverityLevel";
-    INPUTS["analyzersSeverityLevel"] = "analyzersSeverityLevel";
+    INPUTS["severityLevel"] = "severityLevel";
     INPUTS["logLevel"] = "logLevel";
     INPUTS["commitUsername"] = "commitUsername";
     INPUTS["commitUserEmail"] = "commitUserEmail";
@@ -846,12 +845,12 @@ function readJSONSync(path) {
 function arrayMergeDedupe(source, target) {
     return Array.from(new Set([...source, ...target]));
 }
-function readConfig(config, workspace, defaultConfig) {
-    const configFile = (0,path__WEBPACK_IMPORTED_MODULE_3__.resolve)(config || defaultConfig);
-    const workspaceConfig = (0,path__WEBPACK_IMPORTED_MODULE_3__.resolve)(workspace, defaultConfig);
+function readConfig(defaultOptions, configName, workspace, defaultConfigName) {
+    const configFile = (0,path__WEBPACK_IMPORTED_MODULE_3__.resolve)(configName || defaultConfigName);
+    const workspaceConfig = (0,path__WEBPACK_IMPORTED_MODULE_3__.resolve)(workspace, defaultConfigName);
     const configExists = fs__WEBPACK_IMPORTED_MODULE_2__.existsSync(configFile);
     const workspaceConfigExists = fs__WEBPACK_IMPORTED_MODULE_2__.existsSync(workspaceConfig);
-    let resultData = {};
+    let resultData = defaultOptions || {};
     if (configExists) {
         resultData = deepmerge__WEBPACK_IMPORTED_MODULE_1___default()(resultData, readJSONSync(configFile), { arrayMerge: arrayMergeDedupe });
     }
@@ -864,7 +863,7 @@ function readConfig(config, workspace, defaultConfig) {
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`🔎 loaded config: ${(0,util__WEBPACK_IMPORTED_MODULE_4__.inspect)(result)}`);
         return result;
     }
-    (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.warning)(`🔎 config: ${config} not found`);
+    (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.warning)(`🔎 config: ${configName} not found`);
     return {};
 }
 

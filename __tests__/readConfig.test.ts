@@ -25,7 +25,7 @@ describe('readConfig', () => {
         (fs.readFileSync as jest.Mock)
             .mockReturnValueOnce(JSON.stringify({ executionId: 'value1', ignore: ['item1'] }))
             .mockReturnValueOnce(JSON.stringify({ maxSize: 'value2', ignore: ['item2'] }));
-        const result = readConfig<IOptions>('mockConfigPath', 'mockWorkspacePath', '.jscpd.json');
+        const result = readConfig<IOptions>({}, 'mockConfigPath', 'mockWorkspacePath', '.jscpd.json');
         expect(result).toEqual({
             config: resolve('mockWorkspacePath', '.jscpd.json'),
             executionId: 'value1',
@@ -38,7 +38,7 @@ describe('readConfig', () => {
     it('should read config only from configFile', () => {
         (fs.existsSync as jest.Mock).mockReturnValueOnce(true).mockReturnValueOnce(false);
         (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify({ maxSize: 'value1' }));
-        const result = readConfig<IOptions>('mockConfigPath', 'mockWorkspacePath', '.jscpd.json');
+        const result = readConfig<IOptions>({}, 'mockConfigPath', 'mockWorkspacePath', '.jscpd.json');
         expect(result).toEqual({
             config: resolve('mockConfigPath'),
             maxSize: 'value1'
