@@ -37,8 +37,8 @@ jobs:
         uses: maxisam/dotnet-format-plus@main
         with:
           authToken: ${{ secrets.GITHUB_TOKEN }}
-          workspace: ${{ github.workspace }}/__tests__/dotnet/Console
-          projectFileName: "Console.sln"
+          workspace: ${{ github.workspace }}/__tests__/dotnet/ConfigConsoleApp
+          projectFileName: "ConfigConsoleApp.sln"
           jscpdCheck: "true"
           jscpdCheckAsError: "true"
 

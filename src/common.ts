@@ -71,6 +71,6 @@ export function formatOnlyChangedFiles(onlyChangedFiles: boolean): boolean {
     if (onlyChangedFiles && ['issue_comment', 'pull_request'].includes(context.eventName)) {
         return true;
     }
-    core.warning('Formatting only changed files is available on the issue_comment and pull_request events only');
+    onlyChangedFiles && core.warning('Formatting only changed files is available on the issue_comment and pull_request events only');
     return false;
 }
