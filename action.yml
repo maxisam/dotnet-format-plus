@@ -16,6 +16,11 @@ inputs:
     required: false
     default: "fix"
 
+  projectFileName:
+    description: "The solution or project file to operate on."
+    required: false
+    default: ""
+
   onlyChangedFiles:
     description: "Only changed files in the current pull request should be formatted. Only works when the trigger is a pull request."
     required: false
@@ -35,36 +40,8 @@ inputs:
     required: false
     default: ""
 
-  include:
-    description: "The files to include, delimited by space."
-    required: false
-
-  exclude:
-    description: "The files to exclude, delimited by space."
-    required: false
-
-  skipFixWhitespace:
-    description: "Skip whitespace fixes."
-    required: false
-    default: "false"
-
-  skipFixAnalyzers:
-    description: "Skip analyzer fixes."
-    required: false
-    default: "false"
-
-  skipFixStyle:
-    description: "Skip style fixes."
-    required: false
-    default: "false"
-
-  styleSeverityLevel:
+  severityLevel:
     description: " <error|info|warn> Fixes styles according to formatting rules."
-    required: false
-    default: "warn"
-
-  analyzersSeverityLevel:
-    description: " <error|info|warn> Fixes analyzers according to formatting rules."
     required: false
     default: "warn"
 
@@ -87,6 +64,11 @@ inputs:
     description: Message used for the commit
     required: false
     default: "🤖 refactor: Apply dotnet-format changes"
+
+  dotnetFormatConfigPath:
+    description: "Path to dotnet format config file"
+    required: false
+    default: ".dotnet-format.json"
 
   jscpdCheck:
     description: "Run jscpd to check for code duplication"

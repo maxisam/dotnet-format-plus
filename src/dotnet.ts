@@ -1,93 +1,73 @@
-import { debug, info, setFailed, warning } from '@actions/core';
+import * as core from '@actions/core';
 import { context } from '@actions/github';
 
 import * as fs from 'fs';
-import { REPORT_PATH } from './common';
+import path from 'path';
+import { inspect } from 'util';
+import { REPORT_PATH, formatOnlyChangedFiles } from './common';
 import { execute } from './execute';
-import { FormatOptions, FormatResult, ReportItem } from './modals';
+import { FormatResult, FormatType, IDotnetFormatArgs, IDotnetFormatConfig, ReportItem } from './modals';
 
 export const ANNOTATION_OPTIONS = {
     title: 'DOTNET FORMAT Check'
 };
-function formatOnlyChangedFiles(onlyChangedFiles: boolean): boolean {
-    if (onlyChangedFiles) {
-        if (context.eventName === 'issue_comment' || context.eventName === 'pull_request') {
-            return true;
-        }
-        warning('Formatting only changed files is available on the issue_comment and pull_request events only');
-        return false;
-    }
-    return false;
-}
-
-function buildFormatCommandArgsVariants(options: FormatOptions): string[][] {
-    const dotnetFormatOptions: string[][] = [];
-    if (
-        !options.skipFixWhitespace &&
-        !options.skipFixAnalyzers &&
-        !options.skipFixStyle &&
-        options.styleSeverityLevel === options.analyzersSeverityLevel
-    ) {
-        return [['format']];
-    }
-    if (!options.skipFixWhitespace) {
-        dotnetFormatOptions.push(['format', 'whitespace']);
-    }
-    if (!options.skipFixAnalyzers) {
-        dotnetFormatOptions.push(['format', 'analyzers', '--severity', options.analyzersSeverityLevel]);
-    }
-    if (!options.skipFixStyle) {
-        dotnetFormatOptions.push(['format', 'style', '--severity', options.styleSeverityLevel]);
-    }
-    if (dotnetFormatOptions.length) {
-        return dotnetFormatOptions;
-    } else {
-        warning('All fix options are disabled. Falling back to default format command', ANNOTATION_OPTIONS);
-        return [['format']];
-    }
-}
-
-export async function buildFormatCommandArgs(options: FormatOptions, getFilesToCheck: () => Promise<string[]>): Promise<string[][]> {
-    const dotnetFormatOptions: string[] = [];
-
-    if (options.workspace) {
-        dotnetFormatOptions.push(options.workspace);
-    } else {
-        setFailed('Specify PROJECT | SOLUTION, .sln or .csproj');
-        return [];
-    }
-
-    options.dryRun && dotnetFormatOptions.push('--verify-no-changes');
-
-    if (formatOnlyChangedFiles(options.onlyChangedFiles) && context.eventName === 'pull_request') {
-        const filesToCheck = await getFilesToCheck();
-        debug(`filesToCheck: ${filesToCheck}`);
-
-        info(`Checking ${filesToCheck.length} files`);
-
-        if (!filesToCheck.length) {
-            debug('No files found for formatting');
-            warning('No files found for formatting', ANNOTATION_OPTIONS);
-        }
-
-        dotnetFormatOptions.push('--include', filesToCheck.join(' '));
-    }
-
-    !!options.exclude && dotnetFormatOptions.push('--exclude', options.exclude);
-    dotnetFormatOptions.push('--verbosity', options.logLevel);
-    const dotnetFormatOptionsGroups = buildFormatCommandArgsVariants(options);
-    return dotnetFormatOptionsGroups.map(option => {
-        if (option.length === 1) {
-            return [...option, ...dotnetFormatOptions, '--report', `${REPORT_PATH}/dotnet-format.json`];
-        } else {
-            return [...option, ...dotnetFormatOptions, '--report', `${REPORT_PATH}/${option[1]}-format.json`];
-        }
-    });
-}
-
+const DOTNET_FORMAT = 'format';
+const BASE_REPORT_PATH = `${REPORT_PATH}/`;
+const FORMAT_COMPLETE = 'Format complete';
 export function setDotnetEnvironmentVariables(): void {
     process.env.DOTNET_CLI_TELEMETRY_OPTOUT = 'true';
     process.env.DOTNET_NOLOGO = 'true';
+}
+
+export function generateFormatCommandArgs(config: Partial<IDotnetFormatConfig>, workspace: string, changedFiles: string[]): string[][] {
+    core.info(`loaded options: ${inspect(config)}`);
+    if (!workspace) {
+        core.setFailed('Specify PROJECT | SOLUTION, .sln or .csproj');
+        return [];
+    }
+    const dotnetFormatOptions = [path.join(workspace, config.projectFileName || '')];
+    const isOnlyChangedFiles = formatOnlyChangedFiles(config.onlyChangedFiles || false);
+    if (isOnlyChangedFiles) {
+        core.debug(`filesToCheck: ${inspect(changedFiles)}`);
+        core.info(`🔍 Checking ${changedFiles.length} files`);
+    }
+
+    if (config.options?.isEabled) {
+        const args = buildArgs(config.options, isOnlyChangedFiles, changedFiles, FormatType.all);
+        return [[DOTNET_FORMAT, ...dotnetFormatOptions, ...args, '--report', `${BASE_REPORT_PATH}dotnet-format.json`]];
+    }
+
+    const allArgs: string[][] = [];
+    const formatOptionsMapping = {
+        whitespace: config.whitespaceOptions,
+        analyzers: config.analyzersOptions,
+        style: config.styleOptions
+    };
+
+    for (const [type, options] of Object.entries(formatOptionsMapping)) {
+        if (options?.isEabled) {
+            const args = buildArgs(options, isOnlyChangedFiles, changedFiles, type as FormatType);
+            allArgs.push([DOTNET_FORMAT, type, ...dotnetFormatOptions, ...args, '--report', `${BASE_REPORT_PATH}${type}-format.json`]);
+        }
+    }
+
+    return allArgs;
+}
+
+function buildArgs(options: IDotnetFormatArgs, onlyChangedFiles: boolean, changedFiles: string[], type: FormatType): string[] {
+    const dotnetFormatOptions: string[] = [];
+    options.verifyNoChanges && dotnetFormatOptions.push('--verify-no-changes');
+    type === FormatType.whitespace && options.folder && dotnetFormatOptions.push('--folder');
+    if (onlyChangedFiles && changedFiles.length) {
+        dotnetFormatOptions.push('--include', `${changedFiles.join(' ')} ${options.include?.join(' ')}`);
+    } else if (options.include) {
+        dotnetFormatOptions.push('--include', options.include.join(' '));
+    }
+    options.exclude && dotnetFormatOptions.push('--exclude', options.exclude.join(' '));
+    dotnetFormatOptions.push('--verbosity', options.verbosity || 'normal');
+    options.noRestore && dotnetFormatOptions.push('--no-restore');
+    type !== FormatType.whitespace && dotnetFormatOptions.push('--severity', options.severity || 'error');
+    return dotnetFormatOptions;
 }
 
 export async function execFormat(formatArgs: string[]): Promise<FormatResult> {
@@ -97,7 +77,7 @@ export async function execFormat(formatArgs: string[]): Promise<FormatResult> {
     // stdout will always end with Format complete ...
     // stderr will be empty if there are no formatting issues
 
-    const result = stdout[stdout.length - 1].includes('Format complete');
+    const result = stdout[stdout.length - 1].includes(FORMAT_COMPLETE);
     return { stdout, stderr, formatResult: result };
 }
 
@@ -109,7 +89,7 @@ export function getReportFiles(): string[] {
         `${REPORT_PATH}/whitespace-format.json`
     ];
     // check if file size is greater than 2 bytes to avoid empty report
-    return reportPaths.filter(path => fs.existsSync(path) && fs.statSync(path).size > 2);
+    return reportPaths.filter(p => fs.existsSync(p) && fs.statSync(p).size > 2);
 }
 
 export function generateReport(reports: string[]): string {
@@ -157,7 +137,7 @@ function generateMarkdownReport(documents: ReportItem[], title: string): string 
     return markdown;
 }
 
-function toGithubLink(path: string, cwd: string): string {
-    const main = path.replace(`${cwd}/`, '');
+function toGithubLink(filePath: string, cwd: string): string {
+    const main = filePath.replace(`${cwd}/`, '');
     return `[${main}](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/${context.sha}/${main})`;
 }

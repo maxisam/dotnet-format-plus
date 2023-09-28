@@ -4,36 +4,8 @@ import { context } from '@actions/github';
 import { Octokit } from '@octokit/rest';
 import { debug } from 'console';
 import { extname } from 'path';
+import { FileStatus, includedFileTypes } from './const';
 import { execute } from './execute';
-
-const enum FileStatus {
-    /**
-     * The file was added.
-     */
-    Added = 'added',
-
-    /**
-     * The mode of the file was changed or there are unknown changes because the diff was truncated.
-     */
-    Changed = 'changed',
-
-    /**
-     * The content of the file was modified.
-     */
-    Modified = 'modified',
-
-    /**
-     * The file was removed.
-     */
-    Removed = 'removed',
-
-    /**
-     * The file was renamed.
-     */
-    Renamed = 'renamed'
-}
-
-const fileTypes = ['.cs', '.vb'];
 
 export async function getPullRequestFiles(githubClient: InstanceType<typeof Octokit>): Promise<string[]> {
     if (!context.issue.number) {
@@ -47,7 +19,7 @@ export async function getPullRequestFiles(githubClient: InstanceType<typeof Octo
 
     return files
         .filter(file => file.status !== FileStatus.Removed)
-        .filter(file => fileTypes.includes(extname(file.filename)))
+        .filter(file => includedFileTypes.includes(extname(file.filename)))
         .map(file => file.filename);
 }
 

@@ -4,7 +4,7 @@ import { Octokit } from '@octokit/rest';
 import fetch from 'node-fetch';
 import { inspect } from 'util';
 import { execute } from './execute';
-import { FixLevelType, FormatOptions, IInputs, INPUTS } from './modals';
+import { FixLevelType, IInputs, INPUTS, VerbosityType } from './modals';
 
 export const REPORT_PATH = `${process.cwd()}/.dotnet-format`;
 export const REPORT_ARTIFACT_NAME = 'dotnet-format-report';
@@ -15,64 +15,20 @@ export function getInputs(): IInputs {
         onlyChangedFiles: core.getInput(INPUTS.onlyChangedFiles) === 'true',
         failFast: core.getInput(INPUTS.failFast) === 'true',
         workspace: core.getInput(INPUTS.workspace),
-        include: core.getInput(INPUTS.include),
-        exclude: core.getInput(INPUTS.exclude),
-        skipFixWhitespace: core.getInput(INPUTS.skipFixWhitespace) === 'true',
-        skipFixAnalyzers: core.getInput(INPUTS.skipFixAnalyzers) === 'true',
-        skipFixStyle: core.getInput(INPUTS.skipFixStyle) === 'true',
-        styleSeverityLevel: core.getInput(INPUTS.styleSeverityLevel) as FixLevelType,
-        analyzersSeverityLevel: core.getInput(INPUTS.analyzersSeverityLevel) as FixLevelType,
-        logLevel: core.getInput(INPUTS.logLevel),
+        projectFileName: core.getInput(INPUTS.projectFileName),
+        severityLevel: core.getInput(INPUTS.severityLevel) as FixLevelType,
+        logLevel: core.getInput(INPUTS.logLevel) as VerbosityType,
         commitUsername: core.getInput(INPUTS.commitUsername),
         commitUserEmail: core.getInput(INPUTS.commitUserEmail),
         commitMessage: core.getInput(INPUTS.commitMessage),
         nugetConfigPath: core.getInput(INPUTS.nugetConfigPath),
+        dotnetFormatConfigPath: core.getInput(INPUTS.dotnetFormatConfigPath),
         jscpdConfigPath: core.getInput(INPUTS.jscpdConfigPath),
         jscpdCheck: core.getInput(INPUTS.jscpdCheck) === 'true',
         jscpdCheckAsError: core.getInput(INPUTS.jscpdCheckAsError) === 'true'
     };
     core.debug(`Inputs: ${inspect(inputs)}`);
     return inputs;
-}
-
-export function getFormatOptions(inputs: IInputs): FormatOptions {
-    const {
-        action,
-        exclude,
-        skipFixAnalyzers,
-        skipFixStyle,
-        skipFixWhitespace,
-        styleSeverityLevel,
-        analyzersSeverityLevel,
-        include,
-        logLevel,
-        onlyChangedFiles,
-        workspace
-    } = inputs;
-
-    const formatOptions: FormatOptions = {
-        onlyChangedFiles,
-        skipFixWhitespace,
-        skipFixAnalyzers,
-        skipFixStyle,
-        styleSeverityLevel,
-        analyzersSeverityLevel,
-        logLevel,
-        dryRun: action === 'check'
-    };
-
-    if (include) {
-        formatOptions.include = include;
-    }
-
-    if (workspace) {
-        formatOptions.workspace = workspace;
-    }
-
-    if (exclude) {
-        formatOptions.exclude = exclude;
-    }
-    return formatOptions;
 }
 
 export function getOctokitRest(authToken: string, userAgent = 'github-action'): Octokit {
@@ -110,4 +66,11 @@ export function getCurrentBranch(): string {
 export async function RemoveReportFiles(): Promise<boolean> {
     const { result } = await execute(`rm -rf ${REPORT_PATH}/`);
     return result;
+}
+export function formatOnlyChangedFiles(onlyChangedFiles: boolean): boolean {
+    if (onlyChangedFiles && ['issue_comment', 'pull_request'].includes(context.eventName)) {
+        return true;
+    }
+    core.warning('Formatting only changed files is available on the issue_comment and pull_request events only');
+    return false;
 }

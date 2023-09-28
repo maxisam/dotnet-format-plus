@@ -43,7 +43,7 @@ export async function duplicatedCheck(
 }
 
 function getOptions(jscpdConfigPath: string, workspace: string, cwd: string): Partial<IOptions> {
-    const configOptions = readConfig(jscpdConfigPath, workspace, '.jscpd.json');
+    const configOptions = readConfig<IOptions>({}, jscpdConfigPath, workspace, '.jscpd.json');
     const defaultOptions = {
         path: [`${workspace}`],
         reporters: ['markdown', 'json', 'consoleFull'],

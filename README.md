@@ -22,9 +22,11 @@ example:
 
 ## Aknowledgements
 
-This project is based on / inspired by lots of other projects, including:
+This project is based on / inspired by lots of other projects, including but not limited to:
 
 -   https://github.com/xt0rted/dotnet-format
+
+-   https://github.com/jfversluis/dotnet-format
 
 -   https://github.com/kucherenko/jscpd
 

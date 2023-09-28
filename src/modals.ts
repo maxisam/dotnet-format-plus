@@ -6,18 +6,14 @@ export enum INPUTS {
     onlyChangedFiles = 'onlyChangedFiles',
     failFast = 'failFast',
     workspace = 'workspace',
-    include = 'include',
-    exclude = 'exclude',
-    skipFixWhitespace = 'skipFixWhitespace',
-    skipFixAnalyzers = 'skipFixAnalyzers',
-    skipFixStyle = 'skipFixStyle',
-    styleSeverityLevel = 'styleSeverityLevel',
-    analyzersSeverityLevel = 'analyzersSeverityLevel',
+    projectFileName = 'projectFileName',
+    severityLevel = 'severityLevel',
     logLevel = 'logLevel',
     commitUsername = 'commitUsername',
     commitUserEmail = 'commitUserEmail',
     commitMessage = 'commitMessage',
     nugetConfigPath = 'nugetConfigPath',
+    dotnetFormatConfigPath = 'dotnetFormatConfigPath',
     jscpdCheck = 'jscpdCheck',
     jscpdConfigPath = 'jscpdConfigPath',
     jscpdCheckAsError = 'jscpdCheckAsError'
@@ -29,38 +25,20 @@ export interface IInputs {
     onlyChangedFiles: boolean;
     failFast: boolean;
     workspace: string;
-    include?: string;
-    exclude?: string;
-    skipFixWhitespace: boolean;
-    skipFixAnalyzers: boolean;
-    skipFixStyle: boolean;
-    styleSeverityLevel: FixLevelType;
-    analyzersSeverityLevel: FixLevelType;
-    logLevel: string;
+    projectFileName: string;
+    severityLevel: FixLevelType;
+    logLevel: VerbosityType;
     commitUsername: string;
     commitUserEmail: string;
     commitMessage: string;
     nugetConfigPath: string;
+    dotnetFormatConfigPath: string;
     jscpdCheck: boolean;
     jscpdConfigPath: string;
     jscpdCheckAsError: boolean;
 }
 
 export type FixLevelType = 'error' | 'info' | 'warn';
-
-export interface FormatOptions {
-    onlyChangedFiles: boolean;
-    dryRun: boolean;
-    workspace?: string;
-    include?: string;
-    exclude?: string;
-    logLevel: string;
-    skipFixWhitespace: boolean;
-    skipFixAnalyzers: boolean;
-    skipFixStyle: boolean;
-    analyzersSeverityLevel: FixLevelType;
-    styleSeverityLevel: FixLevelType;
-}
 
 export type FormatResult = {
     stdout: string[];
@@ -113,4 +91,36 @@ export interface IDuplication {
 export interface IJsonReport {
     duplicates: IDuplication[];
     statistics: IStatistic;
+}
+
+export interface IDotnetFormatArgs {
+    isEabled: boolean;
+    include?: string[];
+    exclude?: string[];
+    verbosity?: VerbosityType;
+    noRestore?: boolean;
+    folder?: boolean;
+    severity?: severityType;
+    verifyNoChanges: boolean;
+}
+export interface IDotnetFormatConfig {
+    nugetConfigPath?: string;
+    // can be a cproj or solution file
+    projectFileName?: string;
+    // simple mode will only run dotnet format and ignore all other options from style, analyzers and whitespace
+    onlyChangedFiles: boolean;
+    options?: IDotnetFormatArgs;
+    styleOptions?: IDotnetFormatArgs;
+    analyzersOptions?: IDotnetFormatArgs;
+    whitespaceOptions?: IDotnetFormatArgs;
+}
+
+export type VerbosityType = 'quiet' | 'minimal' | 'normal' | 'detailed' | 'diagnostic';
+export type severityType = 'error' | 'info' | 'warn';
+
+export enum FormatType {
+    all = 'all',
+    style = 'style',
+    analyzers = 'analyzers',
+    whitespace = 'whitespace'
 }
