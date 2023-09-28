@@ -22,7 +22,24 @@ jobs:
           workspace: ${{ github.workspace }}/__tests__/dotnet/Console
           projectFileName: "Console.sln"
           jscpdCheck: "true"
-          jscpdConfigPath: ${{ github.workspace }}/__tests__/dotnet/Console/.jscpd.json
+          jscpdCheckAsError: "true"
+
+      - name: log-output
+        run: echo "${{ steps.dotnet-format.outputs.output }}"
+
+  dotnet-format-config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: dotnet-format
+        id: dotnet-format
+        uses: maxisam/dotnet-format-plus@main
+        with:
+          authToken: ${{ secrets.GITHUB_TOKEN }}
+          workspace: ${{ github.workspace }}/__tests__/dotnet/Console
+          projectFileName: "Console.sln"
+          jscpdCheck: "true"
           jscpdCheckAsError: "true"
 
       - name: log-output

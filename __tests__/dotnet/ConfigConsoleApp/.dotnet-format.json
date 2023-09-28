@@ -1,0 +1,35 @@
+{
+    "projectFileName": "ConfigConsoleApp.sln",
+    "onlyChangedFiles": false,
+    "options": {
+        "isEnabled": true,
+        "verbosity": "normal",
+        "noRestore": false,
+        "severity": "error",
+        "verifyNoChanges": true
+    },
+    "styleOptions": {
+        "isEnabled": false,
+        "verbosity": "normal",
+        "noRestore": true,
+        "folder": false,
+        "severity": "warn",
+        "verifyNoChanges": true
+    },
+    "analyzersOptions": {
+        "isEnabled": false,
+        "verbosity": "detailed",
+        "noRestore": true,
+        "folder": true,
+        "severity": "error",
+        "verifyNoChanges": true
+    },
+    "whitespaceOptions": {
+        "isEnabled": false,
+        "verbosity": "diagnostic",
+        "noRestore": true,
+        "folder": true,
+        "severity": "warn",
+        "verifyNoChanges": false
+    }
+}
