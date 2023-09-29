@@ -48,7 +48,7 @@ inputs:
   logLevel:
     description: "Sets the logging verbosity of the dotnet format process. Allowed values are q[uiet], m[inimal], n[ormal], d[etailed], and diag[nostic]"
     required: false
-    default: "normal"
+    default: "detailed"
 
   problemMatcherEnabled:
     description: "Enable the problem matcher for dotnet format."
