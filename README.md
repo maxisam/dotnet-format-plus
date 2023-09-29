@@ -5,6 +5,8 @@ Yet another dotnet format. It combines dotnet format with jscpd to provide a sin
 ## Features
 
 -   Dotnet format
+-   Mono repo support by using dotnet config file to configure dotnet format
+-   Problem Matcher for dotnet format
 -   JSCPD
 -   Generate reports as GitHub Action artifact
 -   Generate reports as comment on PR
@@ -16,10 +18,6 @@ example:
 
 [test workflow](.github/workflows/test.yml)
 
-## TODO
-
--   Create a configuation file for dotnet format, so different workspace can have different settings.
-
 ## Aknowledgements
 
 This project is based on / inspired by lots of other projects, including but not limited to:
@@ -27,6 +25,8 @@ This project is based on / inspired by lots of other projects, including but not
 -   https://github.com/xt0rted/dotnet-format
 
 -   https://github.com/jfversluis/dotnet-format
+
+-   https://github.com/aclemmensen/dotnet-format-problem-matcher
 
 -   https://github.com/kucherenko/jscpd
 

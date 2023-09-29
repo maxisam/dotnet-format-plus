@@ -3,7 +3,7 @@
     "onlyChangedFiles": false,
     "options": {
         "isEnabled": true,
-        "verbosity": "normal",
+        "verbosity": "detailed",
         "severity": "error",
         "verifyNoChanges": false
     },

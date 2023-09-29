@@ -50,6 +50,11 @@ inputs:
     required: false
     default: "normal"
 
+  problemMatcherEnabled:
+    description: "Enable the problem matcher for dotnet format."
+    required: false
+    default: "true"
+
   commitUserName:
     description: Name used for the commit user
     required: false
