@@ -16,7 +16,8 @@ export enum INPUTS {
     dotnetFormatConfigPath = 'dotnetFormatConfigPath',
     jscpdCheck = 'jscpdCheck',
     jscpdConfigPath = 'jscpdConfigPath',
-    jscpdCheckAsError = 'jscpdCheckAsError'
+    jscpdCheckAsError = 'jscpdCheckAsError',
+    problemMatcherEnabled = 'problemMatcherEnabled'
 }
 
 export interface IInputs {
@@ -28,6 +29,7 @@ export interface IInputs {
     projectFileName: string;
     severityLevel: FixLevelType;
     logLevel: VerbosityType;
+    problemMatcherEnabled: boolean;
     commitUsername: string;
     commitUserEmail: string;
     commitMessage: string;

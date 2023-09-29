@@ -18,6 +18,7 @@ export function getInputs(): IInputs {
         projectFileName: core.getInput(INPUTS.projectFileName),
         severityLevel: core.getInput(INPUTS.severityLevel) as FixLevelType,
         logLevel: core.getInput(INPUTS.logLevel) as VerbosityType,
+        problemMatcherEnabled: core.getInput(INPUTS.problemMatcherEnabled) === 'true',
         commitUsername: core.getInput(INPUTS.commitUsername),
         commitUserEmail: core.getInput(INPUTS.commitUserEmail),
         commitMessage: core.getInput(INPUTS.commitMessage),
