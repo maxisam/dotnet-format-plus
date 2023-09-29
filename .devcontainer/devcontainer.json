@@ -11,7 +11,8 @@
         "ghcr.io/devcontainers/features/github-cli:1": {
             "installDirectlyFromGitHubRelease": true,
             "version": "latest"
-        }
+        },
+        "ghcr.io/devcontainers-contrib/features/jest:2": {}
     },
 
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
@@ -24,23 +25,23 @@
         "vscode": {
             // Add the IDs of extensions you want installed when the container is created.
             "extensions": [
-				"streetsidesoftware.code-spell-checker",
-				"bierner.emojisense",
-				"djlynn03.add-to-git-ignore",
-				"EditorConfig.EditorConfig",
-				"dbaeumer.vscode-eslint",
-				"mhutchie.git-graph",
-				"GitHub.copilot",
-				"GitHub.copilot-chat",
-				"eamodio.gitlens",
-				"vespa-dev-works.jestRunIt",
-				"firsttris.vscode-jest-runner",
-				"kavod-io.vscode-jest-test-adapter",
-				"christian-kohler.path-intellisense",
-				"pflannery.vscode-versionlens",
-				"rioukkevin.vscode-git-commit",
-				"ms-vscode.vscode-typescript-next"
-			]
+                "streetsidesoftware.code-spell-checker",
+                "bierner.emojisense",
+                "djlynn03.add-to-git-ignore",
+                "EditorConfig.EditorConfig",
+                "dbaeumer.vscode-eslint",
+                "mhutchie.git-graph",
+                "GitHub.copilot",
+                "GitHub.copilot-chat",
+                "eamodio.gitlens",
+                "vespa-dev-works.jestRunIt",
+                "firsttris.vscode-jest-runner",
+                "kavod-io.vscode-jest-test-adapter",
+                "christian-kohler.path-intellisense",
+                "pflannery.vscode-versionlens",
+                "rioukkevin.vscode-git-commit",
+                "ms-vscode.vscode-typescript-next"
+            ]
         }
     }
 
