@@ -139,6 +139,6 @@ function generateMarkdownReport(documents: ReportItem[], title: string): string 
 
 function toGithubLink(filePath: string, cwd: string): [string, string] {
     const main = filePath.replace(`${cwd}/`, '');
-    const link = `(https://github.com/${context.repo.owner}/${context.repo.repo}/blob/${context.sha}/${main})`;
+    const link = `https://github.com/${context.repo.owner}/${context.repo.repo}/blob/${context.sha}/${main}`;
     return [main, link];
 }
