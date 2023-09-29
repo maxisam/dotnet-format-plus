@@ -16,10 +16,10 @@ Yet another dotnet format. It combines dotnet format with jscpd to provide a sin
 Currently this action is focused on running on PRs.
 example:
 
-[example workflow](.github/workflows/test.yml)
-[example dotnet-format config](./__tests__/dotnet/ConfigConsoleApp/.dotnet-format.json)
-[example jscpd config](./__tests__/dotnet/ConfigConsoleApp/.jscpd.json)
-[Action input](./action.yml)
+- [example workflow](.github/workflows/test.yml)
+- [example dotnet-format config](./__tests__/dotnet/ConfigConsoleApp/.dotnet-format.json)
+- [example jscpd config](./__tests__/dotnet/ConfigConsoleApp/.jscpd.json)
+- [Action input](./action.yml)
 
 ## Aknowledgements
 
