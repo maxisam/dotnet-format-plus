@@ -68,14 +68,14 @@ function getOptions(inputs: IInputs): Partial<IDotnetFormatConfig> {
         onlyChangedFiles: inputs.onlyChangedFiles,
         options: {
             isEabled: true,
-            verifyNoChanges: false,
+            verifyNoChanges: inputs.action === 'check',
             severity: inputs.severityLevel,
             verbosity: inputs.logLevel,
             noRestore: !!inputs.nugetConfigPath
         },
         whitespaceOptions: {
             isEabled: false,
-            verifyNoChanges: false,
+            verifyNoChanges: inputs.action === 'check',
             folder: true,
             severity: inputs.severityLevel,
             verbosity: inputs.logLevel,
@@ -83,14 +83,14 @@ function getOptions(inputs: IInputs): Partial<IDotnetFormatConfig> {
         },
         analyzersOptions: {
             isEabled: false,
-            verifyNoChanges: false,
+            verifyNoChanges: inputs.action === 'check',
             severity: inputs.severityLevel,
             verbosity: inputs.logLevel,
             noRestore: !!inputs.nugetConfigPath
         },
         styleOptions: {
             isEabled: false,
-            verifyNoChanges: false,
+            verifyNoChanges: inputs.action === 'check',
             severity: inputs.severityLevel,
             verbosity: inputs.logLevel,
             noRestore: !!inputs.dotnetFormatConfigPath

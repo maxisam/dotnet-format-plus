@@ -10,11 +10,9 @@ async function run(): Promise<boolean> {
         const inputs = Common.getInputs();
         core.debug(`🔍Inputs: ${inspect(inputs)}`);
         const githubClient = Common.getOctokitRest(inputs.authToken);
-        if (inputs.problemMatcherEnabled) {
-            addProblemMatcher();
-        }
+        inputs.problemMatcherEnabled && addProblemMatcher();
         const finalFormatResult = await format(inputs, githubClient);
-        removeProblemMatcher();
+        inputs.problemMatcherEnabled && removeProblemMatcher();
         if (inputs.jscpdCheck) {
             await duplicatedCheck(inputs.workspace, inputs.jscpdConfigPath, inputs.jscpdCheckAsError, githubClient);
         }
