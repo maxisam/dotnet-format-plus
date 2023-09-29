@@ -20,6 +20,7 @@ jobs:
         with:
           authToken: ${{ secrets.GITHUB_TOKEN }}
           workspace: ${{ github.workspace }}/__tests__/dotnet/Console
+          verbosity: "detailed"
           projectFileName: "Console.sln"
           jscpdCheck: "true"
           jscpdCheckAsError: "true"
