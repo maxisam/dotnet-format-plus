@@ -1,4 +1,3 @@
-import { info } from '@actions/core';
 import { exec } from '@actions/exec';
 
 type ExecuteOutput = {
@@ -20,7 +19,6 @@ export async function execute(
 ): Promise<ExecuteOutput> {
     const stdout: string[] = [];
     const stderr: string[] = [];
-    info(`🔍 cwd: ${cwd}`);
     const exitCode = await exec(cmd, args, {
         silent,
         cwd,

@@ -10,6 +10,8 @@ import { readConfig } from './readConfig';
 
 export async function format(inputs: IInputs, githubClient: InstanceType<typeof Octokit>): Promise<boolean> {
     const configOptions = getOptions(inputs);
+    const cwd = process.cwd();
+    core.info(`🔍 cwd: ${cwd}`);
     dotnet.setDotnetEnvironmentVariables();
     configOptions.nugetConfigPath && (await dotnet.nugetRestore(inputs.nugetConfigPath, inputs.workspace));
 
@@ -40,10 +42,10 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
         if (message) {
             await git.comment(githubClient, message);
             const isRemoved = await Common.RemoveReportFiles();
-            const isInit = isRemoved && (await git.init(process.cwd(), inputs.commitUsername, inputs.commitUserEmail));
+            const isInit = isRemoved && (await git.init(cwd, inputs.commitUsername, inputs.commitUserEmail));
             if (!isDryRun && reportFiles.length) {
                 const currentBranch = Common.getCurrentBranch();
-                const isCommit = isInit && (await git.commit(process.cwd(), inputs.commitMessage, currentBranch));
+                const isCommit = isInit && (await git.commit(cwd, inputs.commitMessage, currentBranch));
                 if (isCommit) {
                     await git.push(currentBranch);
                 }
