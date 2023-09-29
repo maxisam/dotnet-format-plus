@@ -36,6 +36,7 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
     const reportFiles = dotnet.getReportFiles();
     await git.UploadReportToArtifacts(reportFiles, REPORT_ARTIFACT_NAME);
     const isDryRun = checkIsDryRun(configOptions);
+    setOutput(isDryRun, !!reportFiles.length);
     if (finalFormatResult && context.eventName === 'pull_request') {
         const message = dotnet.generateReport(reportFiles);
         // means that there are changes
@@ -54,7 +55,6 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
             core.notice('✅ NO CHANGES', dotnet.ANNOTATION_OPTIONS);
         }
     }
-    await setOutput(isDryRun);
     finalFormatResult
         ? core.notice('✅ DOTNET FORMAT SUCCESS', dotnet.ANNOTATION_OPTIONS)
         : core.error('DOTNET FORMAT FAILED', dotnet.ANNOTATION_OPTIONS);
@@ -100,12 +100,11 @@ function getOptions(inputs: IInputs): Partial<IDotnetFormatConfig> {
     return configOptions;
 }
 
-export async function setOutput(isDryRun: boolean): Promise<void> {
+export function setOutput(isDryRun: boolean, isFileChanged: boolean): void {
     if (isDryRun) {
         core.setOutput('hasChanges', 'false');
         core.notice('Dry run mode. No changes will be committed.', dotnet.ANNOTATION_OPTIONS);
     } else {
-        const isFileChanged = await git.checkIsFileChanged();
         core.warning(`Dotnet Format File Changed: ${isFileChanged}`, dotnet.ANNOTATION_OPTIONS);
         core.setOutput('hasChanges', isFileChanged.toString());
     }

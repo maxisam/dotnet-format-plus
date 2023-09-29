@@ -2,7 +2,6 @@ import * as artifact from '@actions/artifact';
 import * as core from '@actions/core';
 import { context } from '@actions/github';
 import { Octokit } from '@octokit/rest';
-import { debug } from 'console';
 import { extname } from 'path';
 import { FileStatus, includedFileTypes } from './const';
 import { execute } from './execute';
@@ -21,23 +20,6 @@ export async function getPullRequestFiles(githubClient: InstanceType<typeof Octo
         .filter(file => file.status !== FileStatus.Removed)
         .filter(file => includedFileTypes.includes(extname(file.filename)))
         .map(file => file.filename);
-}
-
-export async function checkIsFileChanged(): Promise<boolean> {
-    debug('Checking changed files');
-    const { stdout, stderr } = await execute('git', process.cwd(), ['status', '-s'], false, false);
-    await execute('git', process.cwd(), ['status', '-s'], false, false);
-
-    if (stderr.join('') !== '') {
-        core.error(`Errors while checking git status for changed files. Error: ${stderr.join('\n')}`);
-    }
-
-    if (stdout.join('') === '') {
-        core.info('Did not find any changed files');
-        return false;
-    }
-    core.info('Found changed files');
-    return true;
 }
 
 export async function comment(githubClient: InstanceType<typeof Octokit>, message: string): Promise<boolean> {
