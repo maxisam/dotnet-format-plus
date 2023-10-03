@@ -1,4 +1,4 @@
-import { info } from '@actions/core';
+import * as core from '@actions/core';
 import deepmerge from 'deepmerge';
 import * as fs from 'fs';
 import yaml from 'js-yaml';
@@ -53,7 +53,8 @@ export function readConfig<T>(defaultOptions: Partial<T>, configName: string, wo
     if (workspaceConfigExists) {
         resultData = deepmerge(resultData, readJSONSync<T>(workspaceConfig), { arrayMerge: arrayMergeDedupe });
     }
-
-    info(`🔎 loaded config: ${inspect(resultData)}`);
+    core.startGroup('🔎 Dotnet Format Config');
+    core.info(`${inspect(resultData)}`);
+    core.endGroup();
     return resultData;
 }
