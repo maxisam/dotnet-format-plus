@@ -70,12 +70,13 @@ function buildArgs(options: IDotnetFormatArgs, onlyChangedFiles: boolean, change
 }
 
 export async function execFormat(formatArgs: string[]): Promise<FormatResult> {
+    core.startGroup('🏃Dotnet Format');
     const { stdout, stderr } = await execute('dotnet', process.cwd(), formatArgs, false, true);
     // dotnet format returns non-zero exit code if there are formatting issues
     // but we don't want to fail the action in this case
     // stdout will always end with Format complete ...
     // stderr will be empty if there are no formatting issues
-
+    core.endGroup();
     const result = stdout[stdout.length - 1].includes(FORMAT_COMPLETE);
     return { stdout, stderr, formatResult: result };
 }
@@ -106,6 +107,7 @@ export function generateReport(reports: string[]): string {
 }
 
 export async function nugetRestore(nugetConfigPath: string, workspace: string): Promise<boolean> {
+    core.startGroup('📦 Nuget Restore');
     const { result } = await execute(
         'dotnet restore',
         process.cwd(),
@@ -114,6 +116,7 @@ export async function nugetRestore(nugetConfigPath: string, workspace: string): 
         false,
         false
     );
+    core.endGroup();
     return result;
 }
 
