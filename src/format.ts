@@ -30,26 +30,28 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
     const reportFiles = dotnet.getReportFiles();
     await git.UploadReportToArtifacts(reportFiles, REPORT_ARTIFACT_NAME);
     const isDryRun = checkIsDryRun(configOptions);
-    const isChanged = await git.checkIsFileChanged();
-    setOutput(isDryRun, isChanged);
-    if (finalFormatResult && context.eventName === 'pull_request') {
-        const isReportRemoved = await postReportasComment(reportFiles, githubClient);
-        if (!isDryRun && isChanged && isReportRemoved && !inputs.skipCommit) {
-            await commitChanges(cwd, inputs);
-        }
+    if (context.eventName === 'pull_request') {
+        await postReportAsComment(reportFiles, githubClient);
     }
+    const isReportRemoved = await Common.RemoveReportFiles();
+    const isChanged = isReportRemoved && (await git.checkIsFileChanged());
+    setOutput(isDryRun, isChanged);
+    if (!isDryRun && isChanged && isReportRemoved && !inputs.skipCommit && context.eventName === 'pull_request') {
+        await commitChanges(cwd, inputs);
+    }
+
     finalFormatResult
         ? core.notice('✅ DOTNET FORMAT SUCCESS', dotnet.ANNOTATION_OPTIONS)
         : core.error('DOTNET FORMAT FAILED', dotnet.ANNOTATION_OPTIONS);
     return finalFormatResult;
 }
 
-async function postReportasComment(reportFiles: string[], githubClient: InstanceType<typeof Octokit>): Promise<boolean> {
+async function postReportAsComment(reportFiles: string[], githubClient: InstanceType<typeof Octokit>): Promise<boolean> {
     if (reportFiles.length) {
         const message = dotnet.generateReport(reportFiles);
-        await git.comment(githubClient, message);
+        return await git.comment(githubClient, message);
     }
-    return await Common.RemoveReportFiles();
+    return true;
 }
 
 async function commitChanges(cwd: string, inputs: IInputs): Promise<boolean> {
