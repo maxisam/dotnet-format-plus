@@ -26,17 +26,7 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
     }
 
     const formatArgs = dotnet.generateFormatCommandArgs(configOptions, inputs.workspace, changedFiles);
-
-    let finalFormatResult = true;
-    for (const args of formatArgs) {
-        const { stdout, formatResult } = await dotnet.execFormat(args);
-        core.info(`✅✅✅✅✅ DOTNET FORMAT SUCCESS: ${formatResult} ✅✅✅✅✅`);
-        if (stdout.join('').includes('Unable to fix')) {
-            core.error('Unable to fix all formatting issues', dotnet.ANNOTATION_OPTIONS);
-            finalFormatResult = false;
-        }
-        finalFormatResult = finalFormatResult && formatResult;
-    }
+    const finalFormatResult = await execFormat(formatArgs);
     const reportFiles = dotnet.getReportFiles();
     await git.UploadReportToArtifacts(reportFiles, REPORT_ARTIFACT_NAME);
     const isDryRun = checkIsDryRun(configOptions);
@@ -48,13 +38,8 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
         if (message) {
             await git.comment(githubClient, message);
             const isRemoved = await Common.RemoveReportFiles();
-            const isInit = isRemoved && (await git.init(cwd, inputs.commitUsername, inputs.commitUserEmail));
-            if (!isDryRun && reportFiles.length && isChanged) {
-                const currentBranch = Common.getCurrentBranch();
-                const isCommit = isInit && (await git.commit(cwd, inputs.commitMessage, currentBranch));
-                if (isCommit) {
-                    await git.push(currentBranch);
-                }
+            if (!isDryRun && reportFiles.length && isChanged && isRemoved) {
+                await commitChanges(cwd, inputs);
             }
         } else {
             core.notice('✅ NO CHANGES', dotnet.ANNOTATION_OPTIONS);
@@ -63,6 +48,27 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
     finalFormatResult
         ? core.notice('✅ DOTNET FORMAT SUCCESS', dotnet.ANNOTATION_OPTIONS)
         : core.error('DOTNET FORMAT FAILED', dotnet.ANNOTATION_OPTIONS);
+    return finalFormatResult;
+}
+
+async function commitChanges(cwd: string, inputs: IInputs) {
+    const isInit = await git.init(cwd, inputs.commitUsername, inputs.commitUserEmail);
+    const currentBranch = Common.getCurrentBranch();
+    const isCommit = isInit && (await git.commit(cwd, inputs.commitMessage, currentBranch));
+    isCommit && (await git.push(currentBranch));
+}
+
+async function execFormat(formatArgs: string[][]): Promise<boolean> {
+    let finalFormatResult = true;
+    for (const args of formatArgs) {
+        const { stdout, formatResult } = await dotnet.execFormat(args);
+        core.info(`✅✅✅✅✅ DOTNET FORMAT SUCCESS: ${formatResult} ✅✅✅✅✅`);
+        if (stdout.join('').includes('Unable to fix')) {
+            core.error('Unable to fix all formatting issues', dotnet.ANNOTATION_OPTIONS);
+            finalFormatResult = false;
+        }
+        finalFormatResult = finalFormatResult && formatResult;
+    }
     return finalFormatResult;
 }
 
