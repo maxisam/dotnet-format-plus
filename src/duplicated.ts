@@ -34,12 +34,12 @@ export async function duplicatedCheck(
         const isOverThreshold = checkThreshold(jsonReport, options.threshold || 0);
         jscpdCheckAsError && isOverThreshold ? setFailed('❌ DUPLICATED CODE FOUND') : warning('DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
         showAnnotation(clones, cwd, jscpdCheckAsError && isOverThreshold);
-        await execute(`rm -rf ${cwd}/${REPORT_ARTIFACT_NAME}`);
         setOutput('hasDuplicates', `${isOverThreshold}`);
     } else {
         setOutput('hasDuplicates', 'false');
         notice('✅ NO DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
     }
+    await execute(`rm -rf ${cwd}/${REPORT_ARTIFACT_NAME}`);
 }
 
 function getOptions(jscpdConfigPath: string, workspace: string, cwd: string): Partial<IOptions> {
