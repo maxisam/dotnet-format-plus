@@ -55,6 +55,11 @@ inputs:
     required: false
     default: "true"
 
+  skipCommit:
+    description: "Skip commiting the changes to the repository."
+    required: false
+    default: "false"
+
   commitUserName:
     description: Name used for the commit user
     required: false

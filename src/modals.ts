@@ -17,7 +17,8 @@ export enum INPUTS {
     jscpdCheck = 'jscpdCheck',
     jscpdConfigPath = 'jscpdConfigPath',
     jscpdCheckAsError = 'jscpdCheckAsError',
-    problemMatcherEnabled = 'problemMatcherEnabled'
+    problemMatcherEnabled = 'problemMatcherEnabled',
+    skipCommit = 'skipCommit'
 }
 
 export interface IInputs {
@@ -30,6 +31,7 @@ export interface IInputs {
     severityLevel: FixLevelType;
     logLevel: VerbosityType;
     problemMatcherEnabled: boolean;
+    skipCommit: boolean;
     commitUsername: string;
     commitUserEmail: string;
     commitMessage: string;

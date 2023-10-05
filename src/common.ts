@@ -19,6 +19,7 @@ export function getInputs(): IInputs {
         severityLevel: core.getInput(INPUTS.severityLevel) as FixLevelType,
         logLevel: core.getInput(INPUTS.logLevel) as VerbosityType,
         problemMatcherEnabled: core.getInput(INPUTS.problemMatcherEnabled) === 'true',
+        skipCommit: core.getInput(INPUTS.skipCommit) === 'true',
         commitUsername: core.getInput(INPUTS.commitUsername),
         commitUserEmail: core.getInput(INPUTS.commitUserEmail),
         commitMessage: core.getInput(INPUTS.commitMessage),
@@ -68,6 +69,7 @@ export async function RemoveReportFiles(): Promise<boolean> {
     const { result } = await execute(`rm -rf ${REPORT_PATH}/`);
     return result;
 }
+
 export function formatOnlyChangedFiles(onlyChangedFiles: boolean): boolean {
     if (onlyChangedFiles && ['issue_comment', 'pull_request'].includes(context.eventName)) {
         return true;
