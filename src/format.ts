@@ -36,7 +36,8 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
     const reportFiles = dotnet.getReportFiles();
     await git.UploadReportToArtifacts(reportFiles, REPORT_ARTIFACT_NAME);
     const isDryRun = checkIsDryRun(configOptions);
-    setOutput(isDryRun, !!reportFiles.length);
+    const isChanged = await git.checkIsFileChanged();
+    setOutput(isDryRun, isChanged);
     if (finalFormatResult && context.eventName === 'pull_request') {
         const message = dotnet.generateReport(reportFiles);
         // means that there are changes
@@ -44,7 +45,7 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
             await git.comment(githubClient, message);
             const isRemoved = await Common.RemoveReportFiles();
             const isInit = isRemoved && (await git.init(cwd, inputs.commitUsername, inputs.commitUserEmail));
-            if (!isDryRun && reportFiles.length) {
+            if (!isDryRun && reportFiles.length && isChanged) {
                 const currentBranch = Common.getCurrentBranch();
                 const isCommit = isInit && (await git.commit(cwd, inputs.commitMessage, currentBranch));
                 if (isCommit) {
