@@ -26,7 +26,40 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
     }
 
     const formatArgs = dotnet.generateFormatCommandArgs(configOptions, inputs.workspace, changedFiles);
+    const finalFormatResult = await execFormat(formatArgs);
+    const reportFiles = dotnet.getReportFiles();
+    await git.UploadReportToArtifacts(reportFiles, REPORT_ARTIFACT_NAME);
+    const isDryRun = checkIsDryRun(configOptions);
+    const isChanged = await git.checkIsFileChanged();
+    setOutput(isDryRun, isChanged);
+    if (finalFormatResult && context.eventName === 'pull_request') {
+        const isReportRemoved = await postReportasComment(reportFiles, githubClient);
+        if (!isDryRun && isChanged && isReportRemoved && !inputs.skipCommit) {
+            await commitChanges(cwd, inputs);
+        }
+    }
+    finalFormatResult
+        ? core.notice('✅ DOTNET FORMAT SUCCESS', dotnet.ANNOTATION_OPTIONS)
+        : core.error('DOTNET FORMAT FAILED', dotnet.ANNOTATION_OPTIONS);
+    return finalFormatResult;
+}
 
+async function postReportasComment(reportFiles: string[], githubClient: InstanceType<typeof Octokit>): Promise<boolean> {
+    if (reportFiles.length) {
+        const message = dotnet.generateReport(reportFiles);
+        await git.comment(githubClient, message);
+    }
+    return await Common.RemoveReportFiles();
+}
+
+async function commitChanges(cwd: string, inputs: IInputs) {
+    const isInit = await git.init(cwd, inputs.commitUsername, inputs.commitUserEmail);
+    const currentBranch = Common.getCurrentBranch();
+    const isCommit = isInit && (await git.commit(cwd, inputs.commitMessage, currentBranch));
+    isCommit && (await git.push(currentBranch));
+}
+
+async function execFormat(formatArgs: string[][]): Promise<boolean> {
     let finalFormatResult = true;
     for (const args of formatArgs) {
         const { stdout, formatResult } = await dotnet.execFormat(args);
@@ -37,32 +70,6 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
         }
         finalFormatResult = finalFormatResult && formatResult;
     }
-    const reportFiles = dotnet.getReportFiles();
-    await git.UploadReportToArtifacts(reportFiles, REPORT_ARTIFACT_NAME);
-    const isDryRun = checkIsDryRun(configOptions);
-    const isChanged = await git.checkIsFileChanged();
-    setOutput(isDryRun, isChanged);
-    if (finalFormatResult && context.eventName === 'pull_request') {
-        const message = dotnet.generateReport(reportFiles);
-        // means that there are changes
-        if (message) {
-            await git.comment(githubClient, message);
-            const isRemoved = await Common.RemoveReportFiles();
-            const isInit = isRemoved && (await git.init(cwd, inputs.commitUsername, inputs.commitUserEmail));
-            if (!isDryRun && reportFiles.length && isChanged) {
-                const currentBranch = Common.getCurrentBranch();
-                const isCommit = isInit && (await git.commit(cwd, inputs.commitMessage, currentBranch));
-                if (isCommit) {
-                    await git.push(currentBranch);
-                }
-            }
-        } else {
-            core.notice('✅ NO CHANGES', dotnet.ANNOTATION_OPTIONS);
-        }
-    }
-    finalFormatResult
-        ? core.notice('✅ DOTNET FORMAT SUCCESS', dotnet.ANNOTATION_OPTIONS)
-        : core.error('DOTNET FORMAT FAILED', dotnet.ANNOTATION_OPTIONS);
     return finalFormatResult;
 }
 
@@ -105,7 +112,7 @@ function getOptions(inputs: IInputs): Partial<IDotnetFormatConfig> {
     return configOptions;
 }
 
-export function setOutput(isDryRun: boolean, isFileChanged: boolean): void {
+function setOutput(isDryRun: boolean, isFileChanged: boolean): void {
     if (isDryRun) {
         core.setOutput('hasChanges', 'false');
         core.notice('Dry run mode. No changes will be committed.', dotnet.ANNOTATION_OPTIONS);
@@ -114,7 +121,8 @@ export function setOutput(isDryRun: boolean, isFileChanged: boolean): void {
         core.setOutput('hasChanges', isFileChanged.toString());
     }
 }
-export function checkIsDryRun(config: Partial<IDotnetFormatConfig>): boolean {
+
+function checkIsDryRun(config: Partial<IDotnetFormatConfig>): boolean {
     if (config.options?.isEabled) {
         return config.options?.verifyNoChanges;
     } else {
