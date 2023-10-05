@@ -1,17 +1,17 @@
-name: '🌞 CI'
+name: "🌞 CI"
 
 on:
-  workflow_dispatch:  
+  workflow_dispatch:
   pull_request:
     paths-ignore:
-      - '**.md'
+      - "**.md"
       - dist/**
       - __tests__/dotnet/**
   push:
     branches:
       - main
     paths-ignore:
-      - '**.md'
+      - "**.md"
       - dist/**
       - __tests__/dotnet/**
 jobs:
@@ -27,7 +27,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18.x
-          cache: 'yarn'
+          cache: "yarn"
 
       - run: yarn install
 
@@ -46,6 +46,7 @@ jobs:
           fi
 
       - name: commit build
+        id: commit
         if: ${{ env.diff == 'true' }}
         run: |
           git config --local user.email "maxisam@gmail.com"
@@ -53,3 +54,14 @@ jobs:
           git add dist/
           git commit -m "chore: build, dist updated"
           git push origin ${{ github.event.pull_request.head.ref || github.ref_name }}
+          sha=$(git rev-parse HEAD)
+          echo "sha=$sha" >> $GITHUB_OUTPUT
+
+      - name: Status update
+        if: ${{ env.diff == 'true' }}
+        uses: myrotvorets/set-commit-status-action@v2.0.0
+        with:
+          status: "success"
+          sha: ${{ steps.commit.outputs.sha }}
+          description: "Build Dist Updated"
+          context: "Build Dist Updated"

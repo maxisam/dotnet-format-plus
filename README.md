@@ -10,16 +10,17 @@ Yet another dotnet format. It combines dotnet format with jscpd to provide a sin
 -   JSCPD, can be configured with `.jscpd.json (yml)` file
 -   Generate reports as GitHub Action artifact
 -   Generate reports as comment on PR
+-   (optional) commit changes
 
 ## Usage
 
 Currently this action is focused on running on PRs.
 example:
 
-- [example workflow](.github/workflows/test-dotnet-format.yml)
-- [example dotnet-format config](./__tests__/dotnet/ConfigConsoleApp/.dotnet-format.json)
-- [example jscpd config](./__tests__/dotnet/ConfigConsoleApp/.jscpd.json)
-- [Action input](./action.yml)
+-   [example workflow](.github/workflows/test-dotnet-format.yml)
+-   [example dotnet-format config](./__tests__/dotnet/ConfigConsoleApp/.dotnet-format.json)
+-   [example jscpd config](./__tests__/dotnet/ConfigConsoleApp/.jscpd.json)
+-   [Action input](./action.yml)
 
 ## Aknowledgements
 
