@@ -58,6 +58,23 @@ export async function init(workspace: string, username: string, email: string): 
     }
 }
 
+export async function checkIsFileChanged(): Promise<boolean> {
+    core.debug('Checking changed files');
+    const { stdout, stderr } = await execute('git', process.cwd(), ['status', '-s'], false, false);
+    await execute('git', process.cwd(), ['status', '-s'], false, false);
+
+    if (stderr.join('') !== '') {
+        core.error(`Errors while checking git status for changed files. Error: ${stderr.join('\n')}`);
+    }
+
+    if (stdout.join('') === '') {
+        core.info('Did not find any changed files');
+        return false;
+    }
+    core.info('Found changed files');
+    return true;
+}
+
 export async function commit(workspace: string, message: string, branch: string): Promise<boolean> {
     // check what is the current branch
     const { stdout } = await execute(`git branch --show-current`);
