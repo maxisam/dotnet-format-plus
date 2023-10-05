@@ -52,11 +52,11 @@ async function postReportasComment(reportFiles: string[], githubClient: Instance
     return await Common.RemoveReportFiles();
 }
 
-async function commitChanges(cwd: string, inputs: IInputs) {
+async function commitChanges(cwd: string, inputs: IInputs): Promise<boolean> {
     const isInit = await git.init(cwd, inputs.commitUsername, inputs.commitUserEmail);
     const currentBranch = Common.getCurrentBranch();
     const isCommit = isInit && (await git.commit(cwd, inputs.commitMessage, currentBranch));
-    isCommit && (await git.push(currentBranch));
+    return isCommit && (await git.push(currentBranch));
 }
 
 async function execFormat(formatArgs: string[][]): Promise<boolean> {
