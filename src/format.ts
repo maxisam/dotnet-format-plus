@@ -27,11 +27,15 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
 
     const formatArgs = dotnet.generateFormatCommandArgs(configOptions, inputs.workspace, changedFiles);
 
-    let finalFormatResult = false;
+    let finalFormatResult = true;
     for (const args of formatArgs) {
-        const { formatResult } = await dotnet.execFormat(args);
+        const { stdout, formatResult } = await dotnet.execFormat(args);
         core.info(`✅✅✅✅✅ DOTNET FORMAT SUCCESS: ${formatResult} ✅✅✅✅✅`);
-        finalFormatResult = finalFormatResult || formatResult;
+        if (stdout.join('').includes('Unable to fix')) {
+            core.error('Unable to fix all formatting issues', dotnet.ANNOTATION_OPTIONS);
+            finalFormatResult = false;
+        }
+        finalFormatResult = finalFormatResult && formatResult;
     }
     const reportFiles = dotnet.getReportFiles();
     await git.UploadReportToArtifacts(reportFiles, REPORT_ARTIFACT_NAME);
