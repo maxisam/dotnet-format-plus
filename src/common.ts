@@ -12,23 +12,23 @@ export function getInputs(): IInputs {
     const inputs: IInputs = {
         authToken: core.getInput(INPUTS.authToken),
         action: core.getInput(INPUTS.action),
-        onlyChangedFiles: core.getInput(INPUTS.onlyChangedFiles) === 'true',
-        failFast: core.getInput(INPUTS.failFast) === 'true',
+        onlyChangedFiles: core.getBooleanInput(INPUTS.onlyChangedFiles),
+        failFast: core.getBooleanInput(INPUTS.failFast),
         workspace: core.getInput(INPUTS.workspace),
         projectFileName: core.getInput(INPUTS.projectFileName),
         severityLevel: core.getInput(INPUTS.severityLevel) as FixLevelType,
         logLevel: core.getInput(INPUTS.logLevel) as VerbosityType,
-        problemMatcherEnabled: core.getInput(INPUTS.problemMatcherEnabled) === 'true',
-        skipCommit: core.getInput(INPUTS.skipCommit) === 'true',
+        problemMatcherEnabled: core.getBooleanInput(INPUTS.problemMatcherEnabled),
+        skipCommit: core.getBooleanInput(INPUTS.skipCommit),
         commitUsername: core.getInput(INPUTS.commitUsername),
         commitUserEmail: core.getInput(INPUTS.commitUserEmail),
         commitMessage: core.getInput(INPUTS.commitMessage),
         nugetConfigPath: core.getInput(INPUTS.nugetConfigPath),
         dotnetFormatConfigPath: core.getInput(INPUTS.dotnetFormatConfigPath),
         jscpdConfigPath: core.getInput(INPUTS.jscpdConfigPath),
-        jscpdCheck: core.getInput(INPUTS.jscpdCheck) === 'true',
-        jscpdCheckAsError: core.getInput(INPUTS.jscpdCheckAsError) === 'true',
-        postNewComment: core.getInput(INPUTS.postNewComment) === 'true'
+        jscpdCheck: core.getBooleanInput(INPUTS.jscpdCheck),
+        jscpdCheckAsError: core.getBooleanInput(INPUTS.jscpdCheckAsError),
+        postNewComment: core.getBooleanInput(INPUTS.postNewComment)
     };
     core.debug(`Inputs: ${inspect(inputs)}`);
     return inputs;

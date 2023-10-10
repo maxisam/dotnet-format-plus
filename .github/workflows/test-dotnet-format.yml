@@ -23,8 +23,8 @@ jobs:
           workspace: ${{ github.workspace }}/__tests__/dotnet/Console
           logLevel: "detailed"
           projectFileName: "Console.sln"
-          jscpdCheck: "true"
-          jscpdCheckAsError: "true"
+          jscpdCheck: true
+          jscpdCheckAsError: true
 
       - name: log-output
         run: echo "${{ steps.dotnet-format.outputs.output }}"
@@ -42,8 +42,8 @@ jobs:
           authToken: ${{ secrets.GITHUB_TOKEN }}
           workspace: ${{ github.workspace }}/__tests__/dotnet/ConfigConsoleApp
           projectFileName: "ConfigConsoleApp.sln"
-          jscpdCheck: "true"
-          jscpdCheckAsError: "true"
+          jscpdCheck: true
+          jscpdCheckAsError: true
 
       - name: log-output
         run: echo "${{ steps.dotnet-format.outputs.output }}"
