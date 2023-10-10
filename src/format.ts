@@ -30,10 +30,8 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
     const reportFiles = dotnet.getReportFiles();
     await git.UploadReportToArtifacts(reportFiles, REPORT_ARTIFACT_NAME);
     const isDryRun = checkIsDryRun(configOptions);
-    if (context.eventName === 'pull_request') {
-        await postReportAsComment(reportFiles, githubClient);
-    }
-    const isReportRemoved = await Common.RemoveReportFiles();
+    const isReportPosted = await postReport(reportFiles, githubClient, inputs.workspace);
+    const isReportRemoved = isReportPosted && (await Common.RemoveReportFiles());
     const isChanged = isReportRemoved && (await git.checkIsFileChanged());
     setOutput(isDryRun, isChanged);
     if (!isDryRun && isChanged && isReportRemoved && !inputs.skipCommit && context.eventName === 'pull_request') {
@@ -46,10 +44,14 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
     return finalFormatResult;
 }
 
-async function postReportAsComment(reportFiles: string[], githubClient: InstanceType<typeof Octokit>): Promise<boolean> {
+async function postReport(reportFiles: string[], githubClient: InstanceType<typeof Octokit>, workspace: string): Promise<boolean> {
     if (reportFiles.length) {
-        const message = dotnet.generateReport(reportFiles);
-        return await git.comment(githubClient, message);
+        let message = dotnet.generateReport(reportFiles, workspace);
+        await git.setSummary(message);
+        message += `\n\n[Workflow Runner](${git.getActionRunLink()})`;
+        if (context.eventName === 'pull_request') {
+            return await git.comment(githubClient, message);
+        }
     }
     return true;
 }
