@@ -22,7 +22,7 @@ Yet another dotnet format. It combines dotnet format with jscpd to provide a sin
 
 -   Workflow summary
 
-    <img width="1076" alt="image" src="https://github.com/maxisam/dotnet-format-plus/assets/456807/d1c3e659-b9f3-4969-a752-054739b7920b">
+    <img width="1108" alt="image" src="https://github.com/maxisam/dotnet-format-plus/assets/456807/1ae6b0c3-fd22-4ecd-9330-78ccf18aa9ef">
 
 -   Annotation
 
