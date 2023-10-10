@@ -24,12 +24,12 @@ inputs:
   onlyChangedFiles:
     description: "Only changed files in the current pull request should be formatted. Only works when the trigger is a pull request."
     required: false
-    default: "false"
+    default: false
 
   failFast:
     description: "The job should fail if there's a formatting error."
     required: false
-    default: "true"
+    default: true
 
   workspace:
     description: "The solution or project file to operate on."
@@ -53,12 +53,12 @@ inputs:
   problemMatcherEnabled:
     description: "Enable the problem matcher for dotnet format."
     required: false
-    default: "true"
+    default: true
 
   skipCommit:
     description: "Skip commiting the changes to the repository."
     required: false
-    default: "false"
+    default: false
 
   commitUserName:
     description: Name used for the commit user
@@ -83,7 +83,7 @@ inputs:
   jscpdCheck:
     description: "Run jscpd to check for code duplication"
     required: false
-    default: "false"
+    default: false
 
   jscpdConfigPath:
     description: "Path to jscpd config file"
@@ -93,12 +93,12 @@ inputs:
   jscpdCheckAsError:
     description: "Fail the build if jscpd finds any code duplication"
     required: false
-    default: "false"
+    default: false
 
   postNewComment:
     description: "Post a new comment on the pull request or update an existing one with the results"
     required: false
-    default: "false"
+    default: false
 
 outputs:
   hasChanges:
