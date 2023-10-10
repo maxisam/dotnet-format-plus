@@ -142,10 +142,6 @@ export async function setSummary(text: string): Promise<void> {
     await core.summary.addRaw(text).write();
 }
 
-export function getActionRunLink(): string {
-    return `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-}
-
 async function tryGetUserLogin(octokit: Octokit): Promise<string | undefined> {
     try {
         const username = await octokit.rest.users.getAuthenticated();

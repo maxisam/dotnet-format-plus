@@ -52,9 +52,8 @@ async function postReport(
 ): Promise<boolean> {
     if (reportFiles.length) {
         const header = dotnet.getReportHeader(workspace);
-        let message = dotnet.generateReport(reportFiles, header);
+        const message = dotnet.generateReport(reportFiles, header);
         await git.setSummary(message);
-        message += `\n\n[Workflow Runner](${git.getActionRunLink()})`;
         if (context.eventName === 'pull_request') {
             const existingCommentId = await git.getExistingCommentId(githubClient, header);
             if (!postNewComment && existingCommentId) {
