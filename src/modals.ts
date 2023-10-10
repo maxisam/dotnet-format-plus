@@ -18,7 +18,8 @@ export enum INPUTS {
     jscpdConfigPath = 'jscpdConfigPath',
     jscpdCheckAsError = 'jscpdCheckAsError',
     problemMatcherEnabled = 'problemMatcherEnabled',
-    skipCommit = 'skipCommit'
+    skipCommit = 'skipCommit',
+    postNewComment = 'postNewComment'
 }
 
 export interface IInputs {
@@ -40,6 +41,7 @@ export interface IInputs {
     jscpdCheck: boolean;
     jscpdConfigPath: string;
     jscpdCheckAsError: boolean;
+    postNewComment: boolean;
 }
 
 export type FixLevelType = 'error' | 'info' | 'warn';

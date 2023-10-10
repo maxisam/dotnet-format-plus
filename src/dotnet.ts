@@ -4,7 +4,7 @@ import { context } from '@actions/github';
 import * as fs from 'fs';
 import path from 'path';
 import { inspect } from 'util';
-import { REPORT_PATH, formatOnlyChangedFiles } from './common';
+import { REPORT_PATH, formatOnlyChangedFiles, getReportFooter } from './common';
 import { execute } from './execute';
 import { FormatResult, FormatType, IDotnetFormatArgs, IDotnetFormatConfig, ReportItem } from './modals';
 
@@ -91,11 +91,11 @@ export function getReportFiles(): string[] {
     // check if file size is greater than 2 bytes to avoid empty report
     return reportPaths.filter(p => fs.existsSync(p) && fs.statSync(p).size > 2);
 }
-function reportHeader(workspace: string): string {
+export function getReportHeader(workspace: string): string {
     return `## ✅ DOT NET FORMAT - ${workspace}`;
 }
 
-export function generateReport(reports: string[], workspace: string): string {
+export function generateReport(reports: string[], header: string): string {
     let markdownReport = '';
     for (const report of reports) {
         // get file name from report path without extension
@@ -106,7 +106,7 @@ export function generateReport(reports: string[], workspace: string): string {
     if (!markdownReport) {
         return '';
     }
-    return `${reportHeader(workspace)}\n\n ${markdownReport}`;
+    return `${header}\n\n ${markdownReport}\n\n ${getReportFooter()}`;
 }
 
 export async function nugetRestore(nugetConfigPath: string, workspace: string): Promise<boolean> {

@@ -12,16 +12,21 @@ Yet another dotnet format. It combines dotnet format with jscpd to provide a sin
 -   Generate reports as comment on PR
 -   Generate reports as workflow summary
 -   (optional) commit changes
+-   (optional) update existing PR comment
 
 ## Demo
 
-- generate report as comment https://github.com/maxisam/dotnet-format-plus/pull/48
-- Workflow summary
-  <img width="1076" alt="image" src="https://github.com/maxisam/dotnet-format-plus/assets/456807/d1c3e659-b9f3-4969-a752-054739b7920b">
-  
-- Annotation
-  
-  <img width="567" alt="image" src="https://github.com/maxisam/dotnet-format-plus/assets/456807/87de99ae-a860-46f3-9987-d692df0aaf37">
+-   generate report as comment
+
+    <img width="712" alt="image" src="https://github.com/maxisam/dotnet-format-plus/assets/456807/085a4e5f-61e0-4561-a00a-bf5e26c8a2da">
+
+-   Workflow summary
+
+    <img width="1108" alt="image" src="https://github.com/maxisam/dotnet-format-plus/assets/456807/1ae6b0c3-fd22-4ecd-9330-78ccf18aa9ef">
+
+-   Annotation
+
+    <img width="567" alt="image" src="https://github.com/maxisam/dotnet-format-plus/assets/456807/87de99ae-a860-46f3-9987-d692df0aaf37">
 
 ## Usage
 
@@ -46,3 +51,5 @@ This project is based on / inspired by lots of other projects, including but not
 -   https://github.com/kucherenko/jscpd
 
 -   https://github.com/getunlatch/jscpd-github-action
+
+-   https://github.com/bibipkins/dotnet-test-reporter

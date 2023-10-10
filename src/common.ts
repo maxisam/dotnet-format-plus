@@ -27,7 +27,8 @@ export function getInputs(): IInputs {
         dotnetFormatConfigPath: core.getInput(INPUTS.dotnetFormatConfigPath),
         jscpdConfigPath: core.getInput(INPUTS.jscpdConfigPath),
         jscpdCheck: core.getInput(INPUTS.jscpdCheck) === 'true',
-        jscpdCheckAsError: core.getInput(INPUTS.jscpdCheckAsError) === 'true'
+        jscpdCheckAsError: core.getInput(INPUTS.jscpdCheckAsError) === 'true',
+        postNewComment: core.getInput(INPUTS.postNewComment) === 'true'
     };
     core.debug(`Inputs: ${inspect(inputs)}`);
     return inputs;
@@ -76,4 +77,11 @@ export function formatOnlyChangedFiles(onlyChangedFiles: boolean): boolean {
     }
     onlyChangedFiles && core.warning('Formatting only changed files is available on the issue_comment and pull_request events only');
     return false;
+}
+
+export function getReportFooter(): string {
+    const commit = context.payload?.pull_request?.head?.sha || context.sha;
+    const commitLink = `[${commit.substring(0, 7)}](https://github.com/${context.repo.owner}/${context.repo.repo}/commit/${commit})`;
+    const workflowLink = `[Workflow](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+    return commit ? `<br/>_✏️ updated for commit ${commitLink} by ${workflowLink}_ \n\n` : '';
 }
