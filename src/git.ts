@@ -22,22 +22,6 @@ export async function getPullRequestFiles(githubClient: InstanceType<typeof Octo
         .map(file => file.filename);
 }
 
-export async function comment(githubClient: InstanceType<typeof Octokit>, message: string): Promise<boolean> {
-    const { owner, repo, number } = context.issue;
-    if (!number) {
-        throw new Error('Unable to get pull request number from action event');
-    }
-    core.info(`Commenting on PR #${number}`);
-    const resp = await githubClient.rest.issues.createComment({
-        owner,
-        repo,
-        issue_number: number,
-        body: message
-    });
-    resp.status === 201 ? core.info('Commented on PR') : core.error(`Failed to comment on PR. Response: ${resp}`);
-    return resp.status === 201;
-}
-
 export async function init(workspace: string, username: string, email: string): Promise<boolean> {
     try {
         core.info('Configuring git…');
@@ -160,4 +144,59 @@ export async function setSummary(text: string): Promise<void> {
 
 export function getActionRunLink(): string {
     return `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+}
+
+async function tryGetUserLogin(octokit: Octokit): Promise<string | undefined> {
+    try {
+        const username = await octokit.rest.users.getAuthenticated();
+        return username.data?.login;
+    } catch {
+        core.warning('⚠️ Failed to get username without user scope, will check comment with user type instead');
+        // when token doesn't have user scope
+        return undefined;
+    }
+}
+
+export async function getExistingCommentId(octokit: Octokit, header: string): Promise<number | undefined> {
+    const comments = await octokit.rest.issues.listComments({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: context.issue.number
+    });
+    const userLogin = await tryGetUserLogin(octokit);
+    const existingComment = comments.data?.find(c => {
+        const isBotUserType = c.user?.type === 'Bot' || c.user?.login === userLogin;
+        const startsWithHeader = c.body?.startsWith(header);
+        return isBotUserType && startsWithHeader;
+    });
+    return existingComment?.id;
+}
+
+export async function comment(githubClient: InstanceType<typeof Octokit>, message: string): Promise<boolean> {
+    const { owner, repo, number } = context.issue;
+    if (!number) {
+        throw new Error('Unable to get pull request number from action event');
+    }
+    core.info(`Commenting on PR #${number}`);
+    const resp = await githubClient.rest.issues.createComment({
+        owner,
+        repo,
+        issue_number: number,
+        body: message
+    });
+    resp.status === 201 ? core.info('Commented on PR') : core.error(`Failed to comment on PR. Response: ${resp}`);
+    return resp.status === 201;
+}
+
+export async function updateComment(githubClient: InstanceType<typeof Octokit>, commentId: number, body: string): Promise<boolean> {
+    const { owner, repo, number } = context.issue;
+    core.info(`♻️ Updating comment #${commentId} on PR #${number}`);
+    const resp = await githubClient.rest.issues.updateComment({
+        owner,
+        repo,
+        comment_id: commentId,
+        body
+    });
+    resp.status === 200 ? core.info('Comment updated') : core.error(`Failed to update comment. Response: ${resp}`);
+    return resp.status === 200;
 }

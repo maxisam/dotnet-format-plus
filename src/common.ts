@@ -27,7 +27,8 @@ export function getInputs(): IInputs {
         dotnetFormatConfigPath: core.getInput(INPUTS.dotnetFormatConfigPath),
         jscpdConfigPath: core.getInput(INPUTS.jscpdConfigPath),
         jscpdCheck: core.getInput(INPUTS.jscpdCheck) === 'true',
-        jscpdCheckAsError: core.getInput(INPUTS.jscpdCheckAsError) === 'true'
+        jscpdCheckAsError: core.getInput(INPUTS.jscpdCheckAsError) === 'true',
+        postNewComment: core.getInput(INPUTS.postNewComment) === 'true'
     };
     core.debug(`Inputs: ${inspect(inputs)}`);
     return inputs;

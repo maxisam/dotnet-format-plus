@@ -14,7 +14,7 @@ async function run(): Promise<boolean> {
         const finalFormatResult = await format(inputs, githubClient);
         inputs.problemMatcherEnabled && removeProblemMatcher();
         if (inputs.jscpdCheck) {
-            await duplicatedCheck(inputs.workspace, inputs.jscpdConfigPath, inputs.jscpdCheckAsError, githubClient);
+            await duplicatedCheck(inputs.workspace, inputs.jscpdConfigPath, inputs.jscpdCheckAsError, inputs.postNewComment, githubClient);
         }
         if (!finalFormatResult && inputs.failFast) {
             core.setFailed(`Action failed with format issue`);

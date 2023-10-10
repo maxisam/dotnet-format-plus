@@ -95,6 +95,11 @@ inputs:
     required: false
     default: "false"
 
+  postNewComment:
+    description: "Post a new comment on the pull request or update an existing one with the results"
+    required: false
+    default: "false"
+
 outputs:
   hasChanges:
     description: "A value indicating if any files were formatted. If `action` is `check` we will inspect the exit code of `dotnet format` to be <> 0. If `action` is `fix` we see if there are changes to files with `git status -s`."
