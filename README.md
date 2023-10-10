@@ -10,7 +10,18 @@ Yet another dotnet format. It combines dotnet format with jscpd to provide a sin
 -   JSCPD, can be configured with `.jscpd.json (yml)` file
 -   Generate reports as GitHub Action artifact
 -   Generate reports as comment on PR
+-   Generate reports as workflow summary
 -   (optional) commit changes
+
+## Demo
+
+- generate report as comment https://github.com/maxisam/dotnet-format-plus/pull/48
+- Workflow summary
+  <img width="1076" alt="image" src="https://github.com/maxisam/dotnet-format-plus/assets/456807/d1c3e659-b9f3-4969-a752-054739b7920b">
+  
+- Annotation
+  
+  <img width="567" alt="image" src="https://github.com/maxisam/dotnet-format-plus/assets/456807/87de99ae-a860-46f3-9987-d692df0aaf37">
 
 ## Usage
 
