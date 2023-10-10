@@ -81,7 +81,7 @@ export function formatOnlyChangedFiles(onlyChangedFiles: boolean): boolean {
 
 export function getReportFooter(): string {
     const commit = context.payload?.pull_request?.head?.sha || context.sha;
-    const commitLink = `[${commit.substring(0, 8)}](https://github.com/${context.repo.owner}/${context.repo.repo}/commit/${commit})`;
+    const commitLink = `[${commit.substring(0, 7)}](https://github.com/${context.repo.owner}/${context.repo.repo}/commit/${commit})`;
     const workflowLink = `[Workflow](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
     return commit ? `<br/>_✏️ updated for commit ${commitLink} by ${workflowLink}_ \n\n` : '';
 }
