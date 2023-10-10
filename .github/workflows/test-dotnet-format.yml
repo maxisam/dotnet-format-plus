@@ -10,6 +10,7 @@ on:
 
 jobs:
   dotnet-format:
+    name: "🧪 Test dotnet format"
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -29,6 +30,7 @@ jobs:
         run: echo "${{ steps.dotnet-format.outputs.output }}"
 
   dotnet-format-config:
+    name: "🧪 Test dotnet-format with config"
     runs-on: ubuntu-latest
     steps:
       - name: checkout
