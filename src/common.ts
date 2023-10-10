@@ -78,3 +78,8 @@ export function formatOnlyChangedFiles(onlyChangedFiles: boolean): boolean {
     onlyChangedFiles && core.warning('Formatting only changed files is available on the issue_comment and pull_request events only');
     return false;
 }
+
+export function getReportFooter(): string {
+    const commit = process.env.GITHUB_SHA || context.sha;
+    return commit ? `<br/>_✏️ updated for commit ${commit.substring(0, 8)}_` : '';
+}

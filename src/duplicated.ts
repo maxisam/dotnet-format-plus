@@ -5,6 +5,7 @@ import { Octokit } from '@octokit/rest';
 import * as fs from 'fs';
 import { detectClones } from 'jscpd';
 import { inspect } from 'util';
+import { getReportFooter } from './common';
 import { execute } from './execute';
 import * as git from './git';
 import { IJsonReport } from './modals';
@@ -101,6 +102,8 @@ async function postReport(
     postNewComment: boolean
 ): Promise<string> {
     const report = fs.readFileSync(markdownReport, 'utf8');
+    // remove existing header
+    report.replace('# Copy/paste detection report', '');
     const cwd = process.cwd();
     let markdown = '<details>\n';
     markdown += ` <summary> JSCPD Details </summary>\n\n`;
@@ -112,7 +115,7 @@ async function postReport(
     }
     markdown += '</details>\n';
     const header = getReportHeader(workspace);
-    let message = `${header} \n\n${report}\n\n ${markdown}`;
+    let message = `${header} \n\n${report}\n\n ${markdown}\n\n ${getReportFooter()}`;
     await git.setSummary(message);
     message += `\n\n[Workflow Runner](${git.getActionRunLink()})`;
     if (context.eventName === 'pull_request') {

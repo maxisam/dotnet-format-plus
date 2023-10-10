@@ -4,7 +4,7 @@ import { context } from '@actions/github';
 import * as fs from 'fs';
 import path from 'path';
 import { inspect } from 'util';
-import { REPORT_PATH, formatOnlyChangedFiles } from './common';
+import { REPORT_PATH, formatOnlyChangedFiles, getReportFooter } from './common';
 import { execute } from './execute';
 import { FormatResult, FormatType, IDotnetFormatArgs, IDotnetFormatConfig, ReportItem } from './modals';
 
@@ -106,7 +106,7 @@ export function generateReport(reports: string[], header: string): string {
     if (!markdownReport) {
         return '';
     }
-    return `${header}\n\n ${markdownReport}`;
+    return `${header}\n\n ${markdownReport}\n\n ${getReportFooter()}`;
 }
 
 export async function nugetRestore(nugetConfigPath: string, workspace: string): Promise<boolean> {
