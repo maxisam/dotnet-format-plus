@@ -152,3 +152,12 @@ export async function UploadReportToArtifacts(reports: string[], artifactName: s
         core.info(`Artifact ${artifactName} uploaded successfully`);
     }
 }
+
+// https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary
+export async function setSummary(text: string): Promise<void> {
+    await core.summary.addRaw(text).write();
+}
+
+export function getActionRunLink(): string {
+    return `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+}

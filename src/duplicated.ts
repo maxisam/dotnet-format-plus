@@ -28,7 +28,7 @@ export async function duplicatedCheck(
         const reportFiles = getReportFiles(cwd);
         const markdownReport = reportFiles.find(file => file.endsWith('.md')) as string;
         const jsonReport = reportFiles.find(file => file.endsWith('.json')) as string;
-        const message = await Comment(githubClient, markdownReport, clones);
+        const message = await postReport(githubClient, markdownReport, clones, workspace);
         fs.writeFileSync(markdownReport, message);
         await git.UploadReportToArtifacts([markdownReport, jsonReport], REPORT_ARTIFACT_NAME);
         const isOverThreshold = checkThreshold(jsonReport, options.threshold || 0);
@@ -88,7 +88,11 @@ function showAnnotation(clones: IClone[], cwd: string, isError: boolean): void {
     }
 }
 
-async function Comment(githubClient: InstanceType<typeof Octokit>, markdownReport: string, clones: IClone[]): Promise<string> {
+function reportHeader(workspace: string): string {
+    return `## ❌ DUPLICATED CODE FOUND - ${workspace}`;
+}
+
+async function postReport(githubClient: InstanceType<typeof Octokit>, markdownReport: string, clones: IClone[], workspace: string): Promise<string> {
     const report = fs.readFileSync(markdownReport, 'utf8');
     const cwd = process.cwd();
     let markdown = '<details>\n';
@@ -100,8 +104,12 @@ async function Comment(githubClient: InstanceType<typeof Octokit>, markdownRepor
         markdown += '\n';
     }
     markdown += '</details>\n';
-    const message = `❌ DUPLICATED CODE FOUND \n\n${report}\n\n ${markdown}`;
-    await git.comment(githubClient, message);
+    let message = `${reportHeader(workspace)} \n\n${report}\n\n ${markdown}`;
+    await git.setSummary(message);
+    message += `\n\n[Workflow Runner](${git.getActionRunLink()})`;
+    if (context.eventName === 'pull_request') {
+        await git.comment(githubClient, message);
+    }
     return message;
 }
 
