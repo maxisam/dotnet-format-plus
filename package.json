@@ -45,7 +45,7 @@
         "@babel/core": "^7.23.2",
         "@babel/preset-env": "^7.23.2",
         "@octokit/types": "^12.1.1",
-        "@types/jest": "^29.5.5",
+        "@types/jest": "^29.5.7",
         "@types/js-yaml": "^4.0.8",
         "@types/node": "^18.18.8",
         "@types/node-fetch": "2.6.6",
