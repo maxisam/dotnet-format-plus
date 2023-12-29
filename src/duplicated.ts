@@ -1,4 +1,4 @@
-import { error, info, notice, setFailed, setOutput, warning } from '@actions/core';
+import * as core from '@actions/core';
 import { context } from '@actions/github';
 import { IClone, IOptions } from '@jscpd/core';
 import { Octokit } from '@octokit/rest';
@@ -34,12 +34,12 @@ export async function duplicatedCheck(
         fs.writeFileSync(markdownReport, message);
         await git.UploadReportToArtifacts([markdownReport, jsonReport], REPORT_ARTIFACT_NAME);
         const isOverThreshold = checkThreshold(jsonReport, options.threshold || 0);
-        jscpdCheckAsError && isOverThreshold ? setFailed('❌ DUPLICATED CODE FOUND') : warning('DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
+        jscpdCheckAsError && isOverThreshold ? core.setFailed('❌ DUPLICATED CODE FOUND') : core.warning('DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
         showAnnotation(clones, cwd, jscpdCheckAsError && isOverThreshold);
-        setOutput('hasDuplicates', `${isOverThreshold}`);
+        core.setOutput('hasDuplicates', `${isOverThreshold}`);
     } else {
-        setOutput('hasDuplicates', 'false');
-        notice('✅ NO DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
+        core.setOutput('hasDuplicates', 'false');
+        core.notice('✅ NO DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
     }
     await execute(`rm -rf ${cwd}/${REPORT_ARTIFACT_NAME}`);
 }
@@ -52,19 +52,21 @@ function getOptions(jscpdConfigPath: string, workspace: string, cwd: string): Pa
         output: `${cwd}/${REPORT_ARTIFACT_NAME}`
     };
     const options = { ...configOptions, ...defaultOptions };
-    info(`loaded options: ${inspect(options)}`);
+    core.startGroup('🔎 loaded options');
+    core.info(`${inspect(options)}`);
+    core.endGroup();
     return options;
 }
 
 function getReportFiles(cwd: string): string[] {
     const files = fs.readdirSync(`${cwd}/${REPORT_ARTIFACT_NAME}`);
     const filePaths = files.map(file => `${cwd}/${REPORT_ARTIFACT_NAME}/${file}`);
-    info(`reportFiles: ${filePaths.join(',')}`);
+    core.info(`reportFiles: ${filePaths.join(',')}`);
     return filePaths;
 }
 
 function checkWorkspace(workspace: string): string {
-    info(`workspace: ${workspace}`);
+    core.info(`workspace: ${workspace}`);
     //check if workspace path is a file
     const isFile = fs.existsSync(workspace) && fs.lstatSync(workspace).isFile();
     if (isFile) {
@@ -75,7 +77,7 @@ function checkWorkspace(workspace: string): string {
 }
 
 function showAnnotation(clones: IClone[], cwd: string, isError: boolean): void {
-    const show = isError ? error : warning;
+    const show = isError ? core.error : core.warning;
     for (const clone of clones) {
         show(
             `${clone.duplicationA.sourceId.replace(cwd, '')} (${clone.duplicationA.start.line}-${clone.duplicationA.end.line})
@@ -137,7 +139,7 @@ function checkThreshold(jsonReport: string, threshold: number): boolean {
     // read json report
     const report = JSON.parse(fs.readFileSync(jsonReport, 'utf8')) as IJsonReport;
     if (report.statistics.total.percentage > threshold) {
-        error(`DUPLICATED CODE FOUND ${report.statistics.total.percentage}% IS OVER THRESHOLD ${threshold}%`, ANNOTATION_OPTIONS);
+        core.error(`DUPLICATED CODE FOUND ${report.statistics.total.percentage}% IS OVER THRESHOLD ${threshold}%`, ANNOTATION_OPTIONS);
         return true;
     }
     return false;
