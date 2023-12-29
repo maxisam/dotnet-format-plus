@@ -38,9 +38,10 @@ function arrayMergeDedupe<T>(source: T[], target: T[]): T[] {
     return Array.from(new Set([...source, ...target]));
 }
 
-export function readConfig<T>(defaultOptions: Partial<T>, configName: string, workspace: string, defaultConfigName: string): Partial<T> {
-    const configFile = resolve(configName || defaultConfigName);
-    const workspaceConfig = resolve(workspace, configName || defaultConfigName);
+export function readConfig<T>(defaultOptions: Partial<T>, mainConfigPath: string, workspace: string, defaultConfigName: string): Partial<T> {
+    const configFile = resolve(mainConfigPath || defaultConfigName);
+    const configFilename = configFile.split('/').pop();
+    const workspaceConfig = resolve(workspace, configFilename || defaultConfigName);
 
     const configExists = fs.existsSync(configFile);
     const workspaceConfigExists = workspaceConfig !== configFile && fs.existsSync(workspaceConfig);
