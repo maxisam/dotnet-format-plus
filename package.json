@@ -41,7 +41,7 @@
         "node-fetch": "^2.7.0"
     },
     "devDependencies": {
-        "@babel/cli": "^7.23.4",
+        "@babel/cli": "^7.23.9",
         "@babel/core": "^7.23.6",
         "@babel/preset-env": "^7.23.6",
         "@octokit/types": "^12.4.0",
