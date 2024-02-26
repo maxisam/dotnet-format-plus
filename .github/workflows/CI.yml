@@ -59,7 +59,7 @@ jobs:
 
       - name: Status update
         if: ${{ env.diff == 'true' }}
-        uses: myrotvorets/set-commit-status-action@v2.0.0
+        uses: myrotvorets/set-commit-status-action@v2.0.1
         with:
           status: "success"
           sha: ${{ steps.commit.outputs.sha }}
