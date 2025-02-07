@@ -7,6 +7,7 @@
   "trailingComma": "none",
   "bracketSpacing": true,
   "arrowParens": "avoid",
+  "endOfLine": "auto",
   "overrides": [
     {
       "files": "*.yml|*.yaml",
