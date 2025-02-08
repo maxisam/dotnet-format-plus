@@ -1,4 +1,4 @@
-import * as artifact from '@actions/artifact';
+import { DefaultArtifactClient } from '@actions/artifact';
 import * as core from '@actions/core';
 import { context } from '@actions/github';
 import { Octokit } from '@octokit/rest';
@@ -121,17 +121,15 @@ async function handleRejectedPush(branch: string): Promise<void> {
 }
 // add report to github action artifacts
 export async function UploadReportToArtifacts(reports: string[], artifactName: string): Promise<void> {
-    const artifactClient = artifact.create();
+    const artifactClient = new DefaultArtifactClient();
     if (reports.length === 0) {
         core.info(`No reports found`);
         return;
     }
-    const uploadResponse = await artifactClient.uploadArtifact(artifactName, reports, process.cwd(), {
-        continueOnError: true
-    });
+    const uploadResponse = await artifactClient.uploadArtifact(artifactName, reports, process.cwd());
 
-    if (uploadResponse.failedItems.length > 0) {
-        core.error(`Failed to upload artifact ${artifactName}: ${uploadResponse.failedItems.join(', ')}`);
+    if (!uploadResponse.id) {
+        core.error(`Failed to upload artifact ${artifactName}`);
     } else {
         core.info(`Artifact ${artifactName} uploaded successfully`);
     }

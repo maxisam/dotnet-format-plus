@@ -7,7 +7,7 @@ import { execute } from './execute';
 import { FixLevelType, IInputs, INPUTS, VerbosityType } from './modals';
 
 export const REPORT_PATH = `${process.cwd()}/.dotnet-format`;
-export const REPORT_ARTIFACT_NAME = 'dotnet-format-report';
+export const REPORT_ARTIFACT_NAME = 'dotnetFormatReport';
 export function getInputs(): IInputs {
     const inputs: IInputs = {
         authToken: core.getInput(INPUTS.authToken),
