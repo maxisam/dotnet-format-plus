@@ -10,7 +10,7 @@ import { execute } from './execute';
 import * as git from './git';
 import { IJsonReport } from './modals';
 import { readConfig } from './readConfig';
-export const REPORT_ARTIFACT_NAME = 'jscpdReport';
+export const REPORT_ARTIFACT_NAME = 'jscpdreport';
 
 const ANNOTATION_OPTIONS = {
     title: 'JSCPD Check'
