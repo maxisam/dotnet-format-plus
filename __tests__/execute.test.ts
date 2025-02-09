@@ -1,6 +1,14 @@
 import { describe, expect, it } from '@jest/globals';
 import { execute } from '../src/execute';
 
+const originalConsoleLog = console.log;
+beforeAll(() => {
+    console.log = jest.fn();
+});
+afterAll(() => {
+    console.log = originalConsoleLog;
+});
+
 describe('execute', () => {
     it('should execute a command successfully', async () => {
         // Arrange

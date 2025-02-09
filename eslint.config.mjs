@@ -1,7 +1,7 @@
-import globals from 'globals';
 import pluginJs from '@eslint/js';
-import tseslint from 'typescript-eslint';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
 export default [
     { files: ['**/*.{js,mjs,cjs,ts}'] },
     { files: ['**/*.js'], languageOptions: { sourceType: 'commonjs' } },
@@ -15,7 +15,7 @@ export default [
         }
     },
     {
-        ignores: ['dist/', 'lib/', 'node_modules/', 'jest.config.js', '__tests__/']
+        ignores: ['dist/', 'lib/', 'node_modules/', 'jest.config.js', '__tests__/', 'babel.config.js']
     }
 ];
 
