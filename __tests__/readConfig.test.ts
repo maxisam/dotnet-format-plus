@@ -1,13 +1,19 @@
 import * as fs from 'fs';
 import { readConfig, readJSONSync } from '../src/readConfig';
 
-jest.mock('fs', () => ({
-    existsSync: jest.fn(),
-    readFileSync: jest.fn(),
-    promises: {
-        access: jest.fn()
-    }
-}));
+jest.mock('fs', () => {
+    const actualFs = jest.requireActual('fs');
+    return {
+        ...actualFs,
+        existsSync: jest.fn(),
+        readFileSync: jest.fn(),
+        promises: {
+            ...actualFs.promises,
+            access: jest.fn()
+        }
+    };
+});
+
 jest.mock('@actions/core');
 
 describe('readJSONSync', () => {
