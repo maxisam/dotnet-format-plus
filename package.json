@@ -10,7 +10,7 @@
         "format": "prettier --write \"src/**/*.ts\"",
         "format-check": "prettier --check \"src/**/*.ts\"",
         "lint": "eslint .",
-        "package": "ncc build --target esnext --source-map",
+        "package": "ncc build --source-map",
         "test": "jest --passWithNoTests",
         "test:w": "jest --watchAll",
         "copy-matcher": "cp ./src/problem-matcher.json ./dist/",
