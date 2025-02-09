@@ -29,3 +29,6 @@ async function run(): Promise<boolean> {
 }
 
 await run();
+
+// Force this file to be an ES module:
+export {};
