@@ -3,6 +3,7 @@ module.exports = {
     moduleFileExtensions: ['js', 'ts', 'json'],
     testMatch: ['**/*.test.ts'],
     transform: {
-        '^.+\\.ts$': 'ts-jest'
-    }
+        '^.+\\.(ts|js)$': 'babel-jest'
+    },
+    transformIgnorePatterns: ['/node_modules/(?!@octokit/rest)/']
 };
