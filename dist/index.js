@@ -7,7 +7,6 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 "use strict";
 /* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
 /* harmony export */   "G9": () => (/* binding */ getInputs),
-/* harmony export */   "GB": () => (/* binding */ REPORT_ARTIFACT_NAME),
 /* harmony export */   "IT": () => (/* binding */ getOctokitRest),
 /* harmony export */   "Pw": () => (/* binding */ formatOnlyChangedFiles),
 /* harmony export */   "TS": () => (/* binding */ getReportFooter),
@@ -34,7 +33,6 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 
 
 const REPORT_PATH = `${process.cwd()}/.dotnet-format`;
-const REPORT_ARTIFACT_NAME = 'dotnet-format-report';
 function getInputs() {
     const inputs = {
         authToken: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.authToken */ .A.authToken),
@@ -55,7 +53,9 @@ function getInputs() {
         jscpdConfigPath: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.jscpdConfigPath */ .A.jscpdConfigPath),
         jscpdCheck: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getBooleanInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.jscpdCheck */ .A.jscpdCheck),
         jscpdCheckAsError: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getBooleanInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.jscpdCheckAsError */ .A.jscpdCheckAsError),
-        postNewComment: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getBooleanInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.postNewComment */ .A.postNewComment)
+        postNewComment: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getBooleanInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.postNewComment */ .A.postNewComment),
+        jscpdReportArtifactName: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.jscpdReportArtifactName */ .A.jscpdReportArtifactName),
+        dotnetFormatReportArtifactName: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput(_modals__WEBPACK_IMPORTED_MODULE_5__/* .INPUTS.dotnetFormatReportArtifactName */ .A.dotnetFormatReportArtifactName)
     };
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Inputs: ${(0,util__WEBPACK_IMPORTED_MODULE_3__.inspect)(inputs)}`);
     return inputs;
@@ -119,7 +119,6 @@ function getReportFooter() {
 /* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
 /* harmony export */   "O": () => (/* binding */ duplicatedCheck)
 /* harmony export */ });
-/* unused harmony export REPORT_ARTIFACT_NAME */
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(42186);
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _actions_github__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(95438);
@@ -143,22 +142,21 @@ function getReportFooter() {
 
 
 
-const REPORT_ARTIFACT_NAME = 'jscpd-report';
 const ANNOTATION_OPTIONS = {
     title: 'JSCPD Check'
 };
-async function duplicatedCheck(workspace, jscpdConfigPath, jscpdCheckAsError, postNewComment, githubClient) {
+async function duplicatedCheck(workspace, jscpdConfigPath, jscpdCheckAsError, postNewComment, githubClient, reportArtifactName) {
     const cwd = process.cwd();
     const path = checkWorkspace(workspace);
-    const options = getOptions(jscpdConfigPath, path, cwd);
+    const options = getOptions(jscpdConfigPath, path, cwd, reportArtifactName);
     const clones = await (0,jscpd__WEBPACK_IMPORTED_MODULE_3__.detectClones)(options);
     if (clones.length > 0) {
-        const reportFiles = getReportFiles(cwd);
+        const reportFiles = getReportFiles(cwd, reportArtifactName);
         const markdownReport = reportFiles.find(file => file.endsWith('.md'));
         const jsonReport = reportFiles.find(file => file.endsWith('.json'));
         const message = await postReport(githubClient, markdownReport, clones, workspace, postNewComment);
         fs__WEBPACK_IMPORTED_MODULE_2__.writeFileSync(markdownReport, message);
-        await _git__WEBPACK_IMPORTED_MODULE_7__/* .UploadReportToArtifacts */ .BC([markdownReport, jsonReport], REPORT_ARTIFACT_NAME);
+        await _git__WEBPACK_IMPORTED_MODULE_7__/* .UploadReportToArtifacts */ .BC([markdownReport, jsonReport], reportArtifactName);
         const isOverThreshold = checkThreshold(jsonReport, options.threshold || 0);
         jscpdCheckAsError && isOverThreshold ? _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed('❌ DUPLICATED CODE FOUND') : _actions_core__WEBPACK_IMPORTED_MODULE_0__.warning('DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
         showAnnotation(clones, cwd, jscpdCheckAsError && isOverThreshold);
@@ -168,14 +166,14 @@ async function duplicatedCheck(workspace, jscpdConfigPath, jscpdCheckAsError, po
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('hasDuplicates', 'false');
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.notice('✅ NO DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
     }
-    await (0,_execute__WEBPACK_IMPORTED_MODULE_6__/* .execute */ .h)(`rm -rf ${cwd}/${REPORT_ARTIFACT_NAME}`);
+    await (0,_execute__WEBPACK_IMPORTED_MODULE_6__/* .execute */ .h)(`rm -rf ${cwd}/${reportArtifactName}`);
 }
-function getOptions(jscpdConfigPath, workspace, cwd) {
+function getOptions(jscpdConfigPath, workspace, cwd, reportArtifactName) {
     const configOptions = (0,_readConfig__WEBPACK_IMPORTED_MODULE_8__/* .readConfig */ .z)({}, jscpdConfigPath, workspace, '.jscpd.json');
     const defaultOptions = {
         path: [`${workspace}`],
         reporters: ['markdown', 'json', 'consoleFull'],
-        output: `${cwd}/${REPORT_ARTIFACT_NAME}`
+        output: `${cwd}/${reportArtifactName}`
     };
     const options = { ...configOptions, ...defaultOptions };
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('🔎 loaded options');
@@ -183,9 +181,9 @@ function getOptions(jscpdConfigPath, workspace, cwd) {
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
     return options;
 }
-function getReportFiles(cwd) {
-    const files = fs__WEBPACK_IMPORTED_MODULE_2__.readdirSync(`${cwd}/${REPORT_ARTIFACT_NAME}`);
-    const filePaths = files.map(file => `${cwd}/${REPORT_ARTIFACT_NAME}/${file}`);
+function getReportFiles(cwd, reportArtifactName) {
+    const files = fs__WEBPACK_IMPORTED_MODULE_2__.readdirSync(`${cwd}/${reportArtifactName}`);
+    const filePaths = files.map(file => `${cwd}/${reportArtifactName}/${file}`);
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`reportFiles: ${filePaths.join(',')}`);
     return filePaths;
 }
@@ -464,7 +462,6 @@ var readConfig = __nccwpck_require__(22094);
 
 
 
-
 async function format(inputs, githubClient) {
     const configOptions = getOptions(inputs);
     const cwd = process.cwd();
@@ -482,7 +479,7 @@ async function format(inputs, githubClient) {
     const formatArgs = generateFormatCommandArgs(configOptions, inputs.workspace, changedFiles);
     const finalFormatResult = await format_execFormat(formatArgs);
     const reportFiles = getReportFiles();
-    await git/* UploadReportToArtifacts */.BC(reportFiles, common/* REPORT_ARTIFACT_NAME */.GB);
+    await git/* UploadReportToArtifacts */.BC(reportFiles, inputs.dotnetFormatReportArtifactName);
     const isDryRun = checkIsDryRun(configOptions);
     const isReportPosted = await postReport(reportFiles, githubClient, inputs.workspace, inputs.postNewComment);
     const isReportRemoved = isReportPosted && (await common/* RemoveReportFiles */.VO());
@@ -841,7 +838,7 @@ async function run() {
         const finalFormatResult = await (0,_format__WEBPACK_IMPORTED_MODULE_4__/* .format */ .W)(inputs, githubClient);
         inputs.problemMatcherEnabled && (0,_problem_matcher__WEBPACK_IMPORTED_MODULE_5__/* .removeProblemMatcher */ .b)();
         if (inputs.jscpdCheck) {
-            await (0,_duplicated__WEBPACK_IMPORTED_MODULE_3__/* .duplicatedCheck */ .O)(inputs.workspace, inputs.jscpdConfigPath, inputs.jscpdCheckAsError, inputs.postNewComment, githubClient);
+            await (0,_duplicated__WEBPACK_IMPORTED_MODULE_3__/* .duplicatedCheck */ .O)(inputs.workspace, inputs.jscpdConfigPath, inputs.jscpdCheckAsError, inputs.postNewComment, githubClient, inputs.jscpdReportArtifactName);
         }
         if (!finalFormatResult && inputs.failFast) {
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`Action failed with format issue`);
@@ -891,6 +888,8 @@ var INPUTS;
     INPUTS["problemMatcherEnabled"] = "problemMatcherEnabled";
     INPUTS["skipCommit"] = "skipCommit";
     INPUTS["postNewComment"] = "postNewComment";
+    INPUTS["jscpdReportArtifactName"] = "jscpdReportArtifactName";
+    INPUTS["dotnetFormatReportArtifactName"] = "dotnetFormatReportArtifactName";
 })(INPUTS || (INPUTS = {}));
 var FormatType;
 (function (FormatType) {
