@@ -2,7 +2,6 @@ import * as core from '@actions/core';
 import { context } from '@actions/github';
 import { Octokit } from '@octokit/rest';
 import * as Common from './common';
-import { REPORT_ARTIFACT_NAME } from './common';
 import * as dotnet from './dotnet';
 import * as git from './git';
 import { IDotnetFormatConfig, IInputs } from './modals';
@@ -28,7 +27,7 @@ export async function format(inputs: IInputs, githubClient: InstanceType<typeof 
     const formatArgs = dotnet.generateFormatCommandArgs(configOptions, inputs.workspace, changedFiles);
     const finalFormatResult = await execFormat(formatArgs);
     const reportFiles = dotnet.getReportFiles();
-    await git.UploadReportToArtifacts(reportFiles, REPORT_ARTIFACT_NAME);
+    await git.UploadReportToArtifacts(reportFiles, inputs.dotnetFormatReportArtifactName);
     const isDryRun = checkIsDryRun(configOptions);
     const isReportPosted = await postReport(reportFiles, githubClient, inputs.workspace, inputs.postNewComment);
     const isReportRemoved = isReportPosted && (await Common.RemoveReportFiles());

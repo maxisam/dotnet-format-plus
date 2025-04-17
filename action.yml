@@ -100,6 +100,16 @@ inputs:
     required: false
     default: false
 
+  jscpdReportArtifactName:
+    description: "Name of the artifact containing the JSCPD report"
+    required: false 
+    default: "jscpd-report"
+
+  dotnetFormatReportArtifactName:
+    description: "Name of the artifact containing the dotnet format report"
+    required: false
+    default: "dotnet-format-report"
+
 outputs:
   hasChanges:
     description: "A value indicating if any files were formatted. If `action` is `check` we will inspect the exit code of `dotnet format` to be <> 0. If `action` is `fix` we see if there are changes to files with `git status -s`."

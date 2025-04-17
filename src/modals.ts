@@ -19,7 +19,9 @@ export enum INPUTS {
     jscpdCheckAsError = 'jscpdCheckAsError',
     problemMatcherEnabled = 'problemMatcherEnabled',
     skipCommit = 'skipCommit',
-    postNewComment = 'postNewComment'
+    postNewComment = 'postNewComment',
+    jscpdReportArtifactName = 'jscpdReportArtifactName',
+    dotnetFormatReportArtifactName = 'dotnetFormatReportArtifactName'
 }
 
 export interface IInputs {
@@ -42,6 +44,8 @@ export interface IInputs {
     jscpdConfigPath: string;
     jscpdCheckAsError: boolean;
     postNewComment: boolean;
+    jscpdReportArtifactName: string;
+    dotnetFormatReportArtifactName: string;
 }
 
 export type FixLevelType = 'error' | 'info' | 'warn';

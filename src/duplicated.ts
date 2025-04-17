@@ -10,7 +10,6 @@ import { execute } from './execute';
 import * as git from './git';
 import { IJsonReport } from './modals';
 import { readConfig } from './readConfig';
-export const REPORT_ARTIFACT_NAME = 'jscpd-report';
 
 const ANNOTATION_OPTIONS = {
     title: 'JSCPD Check'
@@ -20,19 +19,20 @@ export async function duplicatedCheck(
     jscpdConfigPath: string,
     jscpdCheckAsError: boolean,
     postNewComment: boolean,
-    githubClient: InstanceType<typeof Octokit>
+    githubClient: InstanceType<typeof Octokit>,
+    reportArtifactName: string
 ): Promise<void> {
     const cwd = process.cwd();
     const path = checkWorkspace(workspace);
-    const options = getOptions(jscpdConfigPath, path, cwd);
+    const options = getOptions(jscpdConfigPath, path, cwd, reportArtifactName);
     const clones = await detectClones(options);
     if (clones.length > 0) {
-        const reportFiles = getReportFiles(cwd);
+        const reportFiles = getReportFiles(cwd, reportArtifactName);
         const markdownReport = reportFiles.find(file => file.endsWith('.md')) as string;
         const jsonReport = reportFiles.find(file => file.endsWith('.json')) as string;
         const message = await postReport(githubClient, markdownReport, clones, workspace, postNewComment);
         fs.writeFileSync(markdownReport, message);
-        await git.UploadReportToArtifacts([markdownReport, jsonReport], REPORT_ARTIFACT_NAME);
+        await git.UploadReportToArtifacts([markdownReport, jsonReport], reportArtifactName);
         const isOverThreshold = checkThreshold(jsonReport, options.threshold || 0);
         jscpdCheckAsError && isOverThreshold ? core.setFailed('❌ DUPLICATED CODE FOUND') : core.warning('DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
         showAnnotation(clones, cwd, jscpdCheckAsError && isOverThreshold);
@@ -41,15 +41,15 @@ export async function duplicatedCheck(
         core.setOutput('hasDuplicates', 'false');
         core.notice('✅ NO DUPLICATED CODE FOUND', ANNOTATION_OPTIONS);
     }
-    await execute(`rm -rf ${cwd}/${REPORT_ARTIFACT_NAME}`);
+    await execute(`rm -rf ${cwd}/${reportArtifactName}`);
 }
 
-function getOptions(jscpdConfigPath: string, workspace: string, cwd: string): Partial<IOptions> {
+function getOptions(jscpdConfigPath: string, workspace: string, cwd: string, reportArtifactName: string): Partial<IOptions> {
     const configOptions = readConfig<IOptions>({}, jscpdConfigPath, workspace, '.jscpd.json');
     const defaultOptions = {
         path: [`${workspace}`],
         reporters: ['markdown', 'json', 'consoleFull'],
-        output: `${cwd}/${REPORT_ARTIFACT_NAME}`
+        output: `${cwd}/${reportArtifactName}`
     };
     const options = { ...configOptions, ...defaultOptions };
     core.startGroup('🔎 loaded options');
@@ -58,9 +58,9 @@ function getOptions(jscpdConfigPath: string, workspace: string, cwd: string): Pa
     return options;
 }
 
-function getReportFiles(cwd: string): string[] {
-    const files = fs.readdirSync(`${cwd}/${REPORT_ARTIFACT_NAME}`);
-    const filePaths = files.map(file => `${cwd}/${REPORT_ARTIFACT_NAME}/${file}`);
+function getReportFiles(cwd: string, reportArtifactName: string): string[] {
+    const files = fs.readdirSync(`${cwd}/${reportArtifactName}`);
+    const filePaths = files.map(file => `${cwd}/${reportArtifactName}/${file}`);
     core.info(`reportFiles: ${filePaths.join(',')}`);
     return filePaths;
 }
