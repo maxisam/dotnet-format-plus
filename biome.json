@@ -6,7 +6,7 @@
         "useIgnoreFile": true
     },
     "files": {
-        "includes": ["**", "!**/dist", "!**/lib", "!**/node_modules", "!__tests__/dotnet"]
+        "includes": ["**", "!**/node_modules", "!__tests__/dotnet"]
     },
     "formatter": {
         "enabled": true,
