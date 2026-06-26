@@ -1,7 +1,7 @@
 import * as core from '@actions/core';
 import deepmerge from 'deepmerge';
 import * as fs from 'fs';
-import yaml from 'js-yaml';
+import { load as yamlLoad } from 'js-yaml';
 import { resolve } from 'path';
 import { inspect } from 'util';
 
@@ -21,7 +21,7 @@ export function readJSONSync<T>(path: string): Partial<T> {
     if (ext === 'json') {
         return JSON.parse(data);
     } else if (ext === 'yaml' || ext === 'yml') {
-        return yaml.load(data) as Partial<T>;
+        return yamlLoad(data) as Partial<T>;
     } else {
         throw new Error(`Unsupported file extension: ${ext}`);
     }

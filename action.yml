@@ -116,5 +116,5 @@ outputs:
   hasDuplicates:
     description: "A value indicating if any files were duplicated when `jscpdCheck` is `true`."
 runs:
-  using: "node16"
+  using: "node20"
   main: "dist/index.js"

@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import { readConfig, readJSONSync } from '../src/readConfig';
 
 jest.mock('fs', () => ({
+    ...jest.requireActual('fs'),
     existsSync: jest.fn(),
     readFileSync: jest.fn(),
     promises: {
