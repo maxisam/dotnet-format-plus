@@ -45,7 +45,7 @@ arg arrays) and small step outputs for scalars.
 > github-script auth uses `github-token: ${{ inputs.authToken }}`.
 
 1. setup env + `::add-matcher::` (shell)
-2. resolve config → `$RUNNER_TEMP/df-config.json` (github-script → `resolve-config.mjs`)
+2. resolve config → `$RUNNER_TEMP/df-config.json` (github-script → `read-config.mjs` + `format-args.mjs`)
 3. changed files, if `onlyChangedFiles` + PR event (github-script)
 4. `dotnet format` per enabled block (shell, consumes config json)
 5. format report → markdown → summary + PR comment (github-script → `dotnet-report.mjs`)
@@ -66,16 +66,20 @@ bundled), so it uses the standard `upload-artifact` action — simpler than the 
 ### Phase 0 — scaffold
 - **T0**: Worktree `../dotnet-format-plus-composite` on branch `feat/composite-action`. ✅
 
-### Phase 1 — tested helpers (port logic 1:1)
-- **T1**: `scripts/resolve-config.mjs` — port `readConfig` 3-way merge (defaults → root →
-  workspace), JSON+YAML, array-dedup, and `isEnabled ?? isEabled ?? default` + simple-vs-
-  granular precedence. Emits normalized `{ blocks:[{type, args:[...]}], isDryRun }`.
-- **T2**: `scripts/build-format-args.mjs` — port `buildArgs` (esp. `--include`/`--exclude`
-  list joining) so the shell step never does bash quoting.
-- **T3**: `scripts/dotnet-report.mjs` + `scripts/jscpd-report.mjs` — port JSON→markdown
-  with the GitHub blob links (from `context`).
-- **T4**: Port the existing `node:test` suite onto these helpers (keeps config-merge /
-  arg / report coverage). YAML via inline `js-yaml` parse or `npx -y js-yaml` conversion —
+### Phase 1 — tested helpers (port logic 1:1) ✅
+- **T1** ✅: `scripts/merge.mjs` (deep-merge + dedupe, replaces `deepmerge`) +
+  `scripts/read-config.mjs` — port `readConfig` 3-way merge (defaults → root → workspace),
+  JSON+YAML (parser injected), array-dedup. `isEnabled ?? isEabled ?? default` +
+  simple-vs-granular precedence live in `format-args.mjs`.
+- **T2** ✅: `scripts/format-args.mjs` — port `buildArgs` (esp. `--include`/`--exclude`
+  list joining) so the shell step never does bash quoting, plus `buildDefaultOptions`,
+  `finalizeEnabled`, `checkIsDryRun`, and a `planFormat` convenience emitting ready-to-run
+  `dotnet` argv arrays + `isDryRun`.
+- **T3** ✅: `scripts/report-common.mjs` (shared footer) + `scripts/dotnet-report.mjs` +
+  `scripts/jscpd-report.mjs` — port JSON→markdown with the GitHub blob links (context
+  injected, not read from `@actions/github`).
+- **T4** ✅: Ported the existing `node:test` suite onto these helpers (33 tests; config-merge
+  / arg / report coverage). YAML via inline `js-yaml` parse or `npx -y js-yaml` conversion —
   no repo `node_modules` needed at action runtime.
 
 ### Phase 2 — composite skeleton
