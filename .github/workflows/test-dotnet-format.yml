@@ -15,6 +15,10 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+      - name: setup-dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
       - name: dotnet-format
         id: dotnet-format
         uses: ./
@@ -27,7 +31,12 @@ jobs:
           jscpdCheckAsError: true
 
       - name: log-output
-        run: echo "${{ steps.dotnet-format.outputs.output }}"
+        env:
+          HAS_CHANGES: ${{ steps.dotnet-format.outputs.hasChanges }}
+          HAS_DUPLICATES: ${{ steps.dotnet-format.outputs.hasDuplicates }}
+        run: |
+          echo "hasChanges=$HAS_CHANGES"
+          echo "hasDuplicates=$HAS_DUPLICATES"
 
   dotnet-format-config:
     name: "🧪 Test dotnet-format with config"
@@ -35,6 +44,10 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+      - name: setup-dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
       - name: dotnet-format
         id: dotnet-format
         uses: ./
@@ -46,4 +59,9 @@ jobs:
           jscpdCheckAsError: true
 
       - name: log-output
-        run: echo "${{ steps.dotnet-format.outputs.output }}"
+        env:
+          HAS_CHANGES: ${{ steps.dotnet-format.outputs.hasChanges }}
+          HAS_DUPLICATES: ${{ steps.dotnet-format.outputs.hasDuplicates }}
+        run: |
+          echo "hasChanges=$HAS_CHANGES"
+          echo "hasDuplicates=$HAS_DUPLICATES"
