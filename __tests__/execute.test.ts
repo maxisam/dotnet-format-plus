@@ -1,18 +1,13 @@
-import { describe, expect, it } from '@jest/globals';
-import { execute } from '../src/execute';
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import { execute } from '../src/execute.ts';
 
 describe('execute', () => {
     it('should execute a command successfully', async () => {
-        // Arrange
-        const cmd = 'echo';
-        const args = ['hello', 'world'];
+        const result = await execute('echo', process.cwd(), ['hello', 'world'], false, false);
 
-        // Act
-        const result = await execute(cmd, process.cwd(), args, false, false);
-
-        // Assert
-        expect(result.result).toBe(true);
-        expect(result.stdout.join('')).toBe('hello world\n');
-        expect(result.stderr.join('')).toBe('');
+        assert.equal(result.result, true);
+        assert.equal(result.stdout.join(''), 'hello world\n');
+        assert.equal(result.stderr.join(''), '');
     });
 });
