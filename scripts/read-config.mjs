@@ -34,31 +34,48 @@ export function readData(path, parseYaml) {
 }
 
 /**
+ * Resolve the absolute main + workspace config paths (the workspace candidate uses
+ * the same filename as the main config). Mirrors the path logic in src/readConfig.ts.
+ * @param {string} mainConfigPath
+ * @param {string} workspace
+ * @param {string} defaultConfigName
+ * @returns {{ configFile: string, workspaceConfig: string }}
+ */
+export function resolveConfigPaths(mainConfigPath, workspace, defaultConfigName) {
+    const configFile = resolve(mainConfigPath || defaultConfigName);
+    const configFilename = basename(configFile) || defaultConfigName;
+    const workspaceConfig = resolve(workspace, configFilename);
+    return { configFile, workspaceConfig };
+}
+
+/**
  * Resolve configuration from a main config path plus an optional workspace config
  * of the same filename. Precedence (later wins): defaults -> main config ->
- * workspace config. Arrays are merged with de-duplication.
+ * workspace config; arrays are merged with de-duplication. This is the single
+ * source of merge precedence; all file I/O + parsing is delegated to the injected
+ * `loadObject(absPath) => object | null | Promise<object|null>` (return `null` when
+ * the file is absent) so the module stays dependency-free at action runtime.
  * @template T
  * @param {Partial<T>} defaultOptions
  * @param {string} mainConfigPath
  * @param {string} workspace
  * @param {string} defaultConfigName
- * @param {(data: string) => unknown} [parseYaml]
- * @returns {Partial<T>}
+ * @param {(absPath: string) => (Partial<T> | null | Promise<Partial<T> | null>)} loadObject
+ * @returns {Promise<Partial<T>>}
  */
-export function resolveConfig(defaultOptions, mainConfigPath, workspace, defaultConfigName, parseYaml) {
-    const configFile = resolve(mainConfigPath || defaultConfigName);
-    const configFilename = basename(configFile) || defaultConfigName;
-    const workspaceConfig = resolve(workspace, configFilename);
-
-    const configExists = fs.existsSync(configFile);
-    const workspaceConfigExists = workspaceConfig !== configFile && fs.existsSync(workspaceConfig);
+export async function resolveConfig(defaultOptions, mainConfigPath, workspace, defaultConfigName, loadObject) {
+    const { configFile, workspaceConfig } = resolveConfigPaths(mainConfigPath, workspace, defaultConfigName);
 
     let result = defaultOptions || {};
-    if (configExists) {
-        result = deepMerge(result, readData(configFile, parseYaml));
+    const main = await loadObject(configFile);
+    if (main) {
+        result = deepMerge(result, main);
     }
-    if (workspaceConfigExists) {
-        result = deepMerge(result, readData(workspaceConfig, parseYaml));
+    if (workspaceConfig !== configFile) {
+        const ws = await loadObject(workspaceConfig);
+        if (ws) {
+            result = deepMerge(result, ws);
+        }
     }
     return result;
 }

@@ -42,6 +42,8 @@ describe('readData', () => {
 
 describe('resolveConfig', () => {
     const defaultOptions = { key1: 'value1' };
+    // Loader mirroring the runtime one: null when absent, otherwise parsed by extension.
+    const loader = p => (fs.existsSync(p) ? readData(p, yamlLoad) : null);
     let dir;
     let mainPath;
     let wsDir;
@@ -57,21 +59,21 @@ describe('resolveConfig', () => {
         fs.rmSync(dir, { recursive: true, force: true });
     });
 
-    it('returns default options when no config exists', () => {
-        const result = resolveConfig(defaultOptions, mainPath, wsDir, 'config.json');
+    it('returns default options when no config exists', async () => {
+        const result = await resolveConfig(defaultOptions, mainPath, wsDir, 'config.json', loader);
         assert.deepEqual(result, defaultOptions);
     });
 
-    it('merges configFile data with defaultOptions', () => {
+    it('merges configFile data with defaultOptions', async () => {
         fs.writeFileSync(mainPath, JSON.stringify({ key2: 'value2', key1: 'updated' }));
-        const result = resolveConfig(defaultOptions, mainPath, wsDir, 'config.json');
+        const result = await resolveConfig(defaultOptions, mainPath, wsDir, 'config.json', loader);
         assert.deepEqual(result, { key1: 'updated', key2: 'value2' });
     });
 
-    it('merges workspaceConfig over defaultOptions and configFile', () => {
+    it('merges workspaceConfig over defaultOptions and configFile', async () => {
         fs.writeFileSync(mainPath, JSON.stringify({ key2: 'value2', sharedKey: 'configValue' }));
         fs.writeFileSync(path.join(wsDir, 'config.json'), JSON.stringify({ key3: 'value3', sharedKey: 'workspaceValue' }));
-        const result = resolveConfig(defaultOptions, mainPath, wsDir, 'config.json');
+        const result = await resolveConfig(defaultOptions, mainPath, wsDir, 'config.json', loader);
         assert.deepEqual(result, {
             key1: 'value1',
             key2: 'value2',
@@ -80,20 +82,21 @@ describe('resolveConfig', () => {
         });
     });
 
-    it('merges array values from configFile and workspaceConfig without duplicates', () => {
+    it('merges array values from configFile and workspaceConfig without duplicates', async () => {
         fs.writeFileSync(mainPath, JSON.stringify({ arrayKey: [1, 2, 3] }));
         fs.writeFileSync(path.join(wsDir, 'config.json'), JSON.stringify({ arrayKey: [3, 4, 5] }));
-        const result = resolveConfig(defaultOptions, mainPath, wsDir, 'config.json');
+        const result = await resolveConfig(defaultOptions, mainPath, wsDir, 'config.json', loader);
         assert.deepEqual(result, {
             key1: 'value1',
             arrayKey: [1, 2, 3, 4, 5]
         });
     });
 
-    it('reads YAML config when a parser is injected', () => {
+    it('supports an async loader (e.g. YAML converted out-of-process)', async () => {
         const yamlMain = path.join(dir, 'main', 'config.yaml');
         fs.writeFileSync(yamlMain, 'key2: value2');
-        const result = resolveConfig(defaultOptions, yamlMain, wsDir, 'config.yaml', yamlLoad);
+        const asyncLoader = async p => (fs.existsSync(p) ? readData(p, yamlLoad) : null);
+        const result = await resolveConfig(defaultOptions, yamlMain, wsDir, 'config.yaml', asyncLoader);
         assert.deepEqual(result, { key1: 'value1', key2: 'value2' });
     });
 });
