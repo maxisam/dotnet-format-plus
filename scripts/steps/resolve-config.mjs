@@ -7,7 +7,8 @@
 import * as fs from 'node:fs';
 import path from 'node:path';
 import { buildDefaultOptions, planFormat } from '../format-args.mjs';
-import { readData, resolveConfig } from '../read-config.mjs';
+import { resolveConfig } from '../read-config.mjs';
+import { makeLoader } from './load-config.mjs';
 
 // Mirrors includedFileTypes from src/const.ts.
 const INCLUDED_FILE_TYPES = ['.cs', '.vb', '.cspoj', '.vbproj', '.fs', '.fsproj', '.cshtml', '.vbhtml'];
@@ -29,23 +30,7 @@ export async function run({ github, context, core, exec }) {
         workspace: env.WORKSPACE || ''
     };
 
-    // Loader for resolveConfig: null when absent, JSON parsed natively, YAML converted
-    // out-of-process with `npx -y js-yaml` so no YAML dep is needed at runtime.
-    const loadObject = async p => {
-        if (!fs.existsSync(p)) {
-            return null;
-        }
-        if (/\.ya?ml$/i.test(p)) {
-            let out = '';
-            await exec.exec('npx', ['-y', 'js-yaml', p], {
-                silent: true,
-                listeners: { stdout: d => (out += d.toString()) }
-            });
-            return JSON.parse(out);
-        }
-        return readData(p);
-    };
-
+    const loadObject = makeLoader(exec);
     const defaults = buildDefaultOptions(inputs);
     const merged = await resolveConfig(defaults, inputs.dotnetFormatConfigPath, inputs.workspace, '.dotnet-format.json', loadObject);
 
