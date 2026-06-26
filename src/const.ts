@@ -1,5 +1,5 @@
 export const includedFileTypes = ['.cs', '.vb', '.cspoj', '.vbproj', '.fs', '.fsproj', '.cshtml', '.vbhtml'];
-export const enum FileStatus {
+export enum FileStatus {
     /**
      * The file was added.
      */

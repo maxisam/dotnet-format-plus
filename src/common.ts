@@ -1,10 +1,9 @@
+import { inspect } from 'node:util';
 import * as core from '@actions/core';
 import { context } from '@actions/github';
+import * as io from '@actions/io';
 import { Octokit } from '@octokit/rest';
-import fetch from 'node-fetch';
-import { inspect } from 'util';
-import { execute } from './execute';
-import { FixLevelType, IInputs, INPUTS, VerbosityType } from './modals';
+import { type FixLevelType, type IInputs, INPUTS, type VerbosityType } from './modals.ts';
 
 export const REPORT_PATH = `${process.cwd()}/.dotnet-format`;
 export function getInputs(): IInputs {
@@ -46,9 +45,6 @@ export function getOctokitRest(authToken: string, userAgent = 'github-action'): 
                 info: () => {},
                 warn: console.warn,
                 error: console.error
-            },
-            request: {
-                fetch
             }
         });
         return octokit;
@@ -68,8 +64,8 @@ export function getCurrentBranch(): string {
 }
 
 export async function RemoveReportFiles(): Promise<boolean> {
-    const { result } = await execute(`rm -rf ${REPORT_PATH}/`);
-    return result;
+    await io.rmRF(REPORT_PATH);
+    return true;
 }
 
 export function formatOnlyChangedFiles(onlyChangedFiles: boolean): boolean {

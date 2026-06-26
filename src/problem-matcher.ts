@@ -1,12 +1,14 @@
-import { join } from 'path';
-
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import * as core from '@actions/core';
-import { issueCommand } from '@actions/core/lib/command';
+import { issueCommand } from '@actions/core/lib/command.js';
+
+const moduleDir = dirname(fileURLToPath(import.meta.url));
 
 export function addProblemMatcher(): void {
     try {
-        core.info(`Adding problem matcher from ${join(__dirname, 'problem-matcher.json')}`);
-        issueCommand('add-matcher', {}, join(__dirname, 'problem-matcher.json'));
+        core.info(`Adding problem matcher from ${join(moduleDir, 'problem-matcher.json')}`);
+        issueCommand('add-matcher', {}, join(moduleDir, 'problem-matcher.json'));
     } catch (error) {
         if (error instanceof Error) {
             core.setFailed(error.message);

@@ -1,9 +1,9 @@
+import { inspect } from 'node:util';
 import * as core from '@actions/core';
-import { inspect } from 'util';
-import * as Common from './common';
-import { duplicatedCheck } from './duplicated';
-import { format } from './format';
-import { addProblemMatcher, removeProblemMatcher } from './problem-matcher';
+import * as Common from './common.ts';
+import { duplicatedCheck } from './duplicated.ts';
+import { format } from './format.ts';
+import { addProblemMatcher, removeProblemMatcher } from './problem-matcher.ts';
 
 async function run(): Promise<boolean> {
     try {
@@ -15,10 +15,10 @@ async function run(): Promise<boolean> {
         inputs.problemMatcherEnabled && removeProblemMatcher();
         if (inputs.jscpdCheck) {
             await duplicatedCheck(
-                inputs.workspace, 
-                inputs.jscpdConfigPath, 
-                inputs.jscpdCheckAsError, 
-                inputs.postNewComment, 
+                inputs.workspace,
+                inputs.jscpdConfigPath,
+                inputs.jscpdCheckAsError,
+                inputs.postNewComment,
                 githubClient,
                 inputs.jscpdReportArtifactName
             );

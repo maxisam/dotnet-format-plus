@@ -1,37 +1,47 @@
-import * as core from '@actions/core';
-import { REPORT_PATH } from '../src/common';
-import { generateFormatCommandArgs } from '../src/dotnet';
-import { IDotnetFormatConfig } from '../src/modals';
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import { REPORT_PATH } from '../src/common.ts';
+import { generateFormatCommandArgs } from '../src/dotnet.ts';
+import type { IDotnetFormatConfig } from '../src/modals.ts';
 
-jest.mock('@actions/core');
+// Capture stdout for the duration of fn so the GitHub Actions commands emitted
+// by @actions/core (e.g. ::error::) can be asserted without mocking the module.
+function captureStdout(fn: () => void): string {
+    const original = process.stdout.write.bind(process.stdout);
+    let out = '';
+    process.stdout.write = ((chunk: string | Uint8Array): boolean => {
+        out += chunk.toString();
+        return true;
+    }) as typeof process.stdout.write;
+    try {
+        fn();
+    } finally {
+        process.stdout.write = original;
+    }
+    return out;
+}
 
 describe('generateFormatCommandArgs', () => {
-    beforeEach(() => {
-        jest.clearAllMocks();
-        (core.info as jest.Mock).mockImplementation(message => {
-            console.log(`Mocked info: ${message}`);
+    it('returns an empty array and fails when workspace is not specified', () => {
+        const previousExitCode = process.exitCode;
+        let result: string[][] = [];
+        const out = captureStdout(() => {
+            result = generateFormatCommandArgs({}, '', []);
         });
-        (core.setFailed as jest.Mock).mockImplementation(message => {
-            console.log(`Mocked setFailed: ${message}`);
-        });
+        // core.setFailed sets process.exitCode; reset it so the test run is clean.
+        process.exitCode = previousExitCode;
+
+        assert.deepEqual(result, []);
+        assert.match(out, /Specify PROJECT \| SOLUTION/);
     });
 
-    it('should return an empty array if workspace is not specified', () => {
-        const config = {};
-        const workspace = '';
-        const changedFiles: string[] = [];
-        const result = generateFormatCommandArgs(config, workspace, changedFiles);
-        expect(result).toEqual([]);
-        expect(core.setFailed).toHaveBeenCalledWith('Specify PROJECT | SOLUTION, .sln or .csproj');
-    });
-
-    it('should return an array with format command if options are enabled', () => {
+    it('returns an array with format command if options are enabled', () => {
         const workspace = '/path/to/workspace';
         const config: IDotnetFormatConfig = {
             projectFileName: 'test.csproj',
             onlyChangedFiles: false,
             options: {
-                isEabled: true,
+                isEnabled: true,
                 verbosity: 'normal',
                 noRestore: true,
                 folder: false,
@@ -39,31 +49,30 @@ describe('generateFormatCommandArgs', () => {
                 verifyNoChanges: true
             }
         };
-        const changedFiles: string[] = [];
-        const result = generateFormatCommandArgs(config, workspace, changedFiles);
-        expect(result).toEqual([
+        const result = generateFormatCommandArgs(config, workspace, []);
+        assert.deepEqual(result, [
             [
                 'format',
                 '/path/to/workspace/test.csproj',
                 '--verify-no-changes',
                 '--verbosity',
-                config.options?.verbosity,
+                'normal',
                 '--no-restore',
                 '--severity',
-                config.options?.severity,
+                'error',
                 '--report',
                 `${REPORT_PATH}/dotnet-format.json`
             ]
         ]);
     });
 
-    it('should return an array with sub commands if options are enabled', () => {
+    it('returns an array with sub commands if options are enabled', () => {
         const workspace = '/path/to/workspace';
         const config: IDotnetFormatConfig = {
             projectFileName: 'test.csproj',
             onlyChangedFiles: false,
             styleOptions: {
-                isEabled: true,
+                isEnabled: true,
                 verbosity: 'normal',
                 noRestore: true,
                 folder: false,
@@ -71,7 +80,7 @@ describe('generateFormatCommandArgs', () => {
                 verifyNoChanges: true
             },
             analyzersOptions: {
-                isEabled: true,
+                isEnabled: true,
                 verbosity: 'detailed',
                 noRestore: true,
                 folder: true,
@@ -79,7 +88,7 @@ describe('generateFormatCommandArgs', () => {
                 verifyNoChanges: true
             },
             whitespaceOptions: {
-                isEabled: true,
+                isEnabled: true,
                 verbosity: 'diagnostic',
                 noRestore: true,
                 folder: true,
@@ -87,16 +96,15 @@ describe('generateFormatCommandArgs', () => {
                 verifyNoChanges: false
             }
         };
-        const changedFiles: string[] = [];
-        const result = generateFormatCommandArgs(config, workspace, changedFiles);
-        expect(result).toEqual([
+        const result = generateFormatCommandArgs(config, workspace, []);
+        assert.deepEqual(result, [
             [
                 'format',
                 'whitespace',
                 '/path/to/workspace/test.csproj',
                 '--folder',
                 '--verbosity',
-                config.whitespaceOptions?.verbosity,
+                'diagnostic',
                 '--no-restore',
                 '--report',
                 `${REPORT_PATH}/whitespace-format.json`
@@ -107,10 +115,10 @@ describe('generateFormatCommandArgs', () => {
                 '/path/to/workspace/test.csproj',
                 '--verify-no-changes',
                 '--verbosity',
-                config.analyzersOptions?.verbosity,
+                'detailed',
                 '--no-restore',
                 '--severity',
-                config.analyzersOptions?.severity,
+                'error',
                 '--report',
                 `${REPORT_PATH}/analyzers-format.json`
             ],
@@ -120,13 +128,32 @@ describe('generateFormatCommandArgs', () => {
                 '/path/to/workspace/test.csproj',
                 '--verify-no-changes',
                 '--verbosity',
-                config.styleOptions?.verbosity,
+                'normal',
                 '--no-restore',
                 '--severity',
-                config.styleOptions?.severity,
+                'warn',
                 '--report',
                 `${REPORT_PATH}/style-format.json`
             ]
         ]);
+    });
+
+    it('treats the legacy isEabled key as enabled (backward compatibility)', () => {
+        const workspace = '/path/to/workspace';
+        const config = {
+            projectFileName: 'test.csproj',
+            onlyChangedFiles: false,
+            options: {
+                isEabled: true,
+                verbosity: 'normal',
+                noRestore: true,
+                severity: 'error',
+                verifyNoChanges: true
+            }
+        } as IDotnetFormatConfig;
+        const result = generateFormatCommandArgs(config, workspace, []);
+        assert.equal(result.length, 1);
+        assert.equal(result[0][0], 'format');
+        assert.equal(result[0][1], '/path/to/workspace/test.csproj');
     });
 });

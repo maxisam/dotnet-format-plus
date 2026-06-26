@@ -1,12 +1,11 @@
+import * as fs from 'node:fs';
+import path from 'node:path';
+import { inspect } from 'node:util';
 import * as core from '@actions/core';
 import { context } from '@actions/github';
-
-import * as fs from 'fs';
-import path from 'path';
-import { inspect } from 'util';
-import { REPORT_PATH, formatOnlyChangedFiles, getReportFooter } from './common';
-import { execute } from './execute';
-import { FormatResult, FormatType, IDotnetFormatArgs, IDotnetFormatConfig, ReportItem } from './modals';
+import { formatOnlyChangedFiles, getReportFooter, REPORT_PATH } from './common.ts';
+import { execute } from './execute.ts';
+import { type FormatResult, FormatType, type IDotnetFormatArgs, type IDotnetFormatConfig, type ReportItem } from './modals.ts';
 
 export const ANNOTATION_OPTIONS = {
     title: 'DOTNET FORMAT Check'
@@ -17,6 +16,12 @@ const FORMAT_COMPLETE = 'Format complete';
 export function setDotnetEnvironmentVariables(): void {
     process.env.DOTNET_CLI_TELEMETRY_OPTOUT = 'true';
     process.env.DOTNET_NOLOGO = 'true';
+}
+
+// Resolve whether a format block is enabled, accepting both the canonical
+// `isEnabled` key and the legacy misspelled `isEabled` key for compatibility.
+export function isEnabledBlock(block: IDotnetFormatArgs | undefined, defaultValue: boolean): boolean {
+    return block?.isEnabled ?? block?.isEabled ?? defaultValue;
 }
 
 export function generateFormatCommandArgs(config: Partial<IDotnetFormatConfig>, workspace: string, changedFiles: string[]): string[][] {
@@ -31,8 +36,8 @@ export function generateFormatCommandArgs(config: Partial<IDotnetFormatConfig>, 
         core.info(`🔍 Checking ${changedFiles.length} files`);
     }
 
-    if (config.options?.isEabled) {
-        const args = buildArgs(config.options, isOnlyChangedFiles, changedFiles, FormatType.all);
+    if (isEnabledBlock(config.options, false)) {
+        const args = buildArgs(config.options as IDotnetFormatArgs, isOnlyChangedFiles, changedFiles, FormatType.all);
         return [[DOTNET_FORMAT, ...dotnetFormatOptions, ...args, '--report', `${BASE_REPORT_PATH}dotnet-format.json`]];
     }
 
@@ -44,8 +49,8 @@ export function generateFormatCommandArgs(config: Partial<IDotnetFormatConfig>, 
     };
 
     for (const [type, options] of Object.entries(formatOptionsMapping)) {
-        if (options?.isEabled) {
-            const args = buildArgs(options, isOnlyChangedFiles, changedFiles, type as FormatType);
+        if (isEnabledBlock(options, false)) {
+            const args = buildArgs(options as IDotnetFormatArgs, isOnlyChangedFiles, changedFiles, type as FormatType);
             allArgs.push([DOTNET_FORMAT, type, ...dotnetFormatOptions, ...args, '--report', `${BASE_REPORT_PATH}${type}-format.json`]);
         }
     }
@@ -57,10 +62,9 @@ function buildArgs(options: IDotnetFormatArgs, onlyChangedFiles: boolean, change
     const dotnetFormatOptions: string[] = [];
     options.verifyNoChanges && dotnetFormatOptions.push('--verify-no-changes');
     type === FormatType.whitespace && options.folder && dotnetFormatOptions.push('--folder');
-    if (onlyChangedFiles && changedFiles.length) {
-        dotnetFormatOptions.push('--include', `${changedFiles.join(' ')} ${options.include?.join(' ')}`);
-    } else if (options.include) {
-        dotnetFormatOptions.push('--include', options.include.join(' '));
+    const includes = onlyChangedFiles && changedFiles.length ? [...changedFiles, ...(options.include ?? [])] : (options.include ?? []);
+    if (includes.length) {
+        dotnetFormatOptions.push('--include', includes.join(' '));
     }
     options.exclude && dotnetFormatOptions.push('--exclude', options.exclude.join(' '));
     dotnetFormatOptions.push('--verbosity', options.verbosity || 'normal');
