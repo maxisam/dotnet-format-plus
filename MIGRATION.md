@@ -49,12 +49,12 @@ arg arrays) and small step outputs for scalars.
 3. changed files, if `onlyChangedFiles` + PR event (github-script)
 4. `dotnet format` per enabled block (shell, consumes config json)
 5. format report → markdown → summary + PR comment (github-script → `dotnet-report.mjs`)
-6. `actions/upload-artifact@v4` (dotnet report)
+6. `actions/upload-artifact@v7.0.1` (dotnet report)
 7. commit & push with rebase-retry + `hasChanges` output (shell)
 8. `::remove-matcher::` (shell)
 9. jscpd run (shell, PATH-or-`npx jscpd@5`)
 10. jscpd report → threshold → annotations → comment → summary + `hasDuplicates` (github-script → `jscpd-report.mjs`)
-11. `actions/upload-artifact@v4` (jscpd report)
+11. `actions/upload-artifact@v7.0.1` (jscpd report)
 12. `failFast` gate (shell)
 
 Note: artifact upload is the one thing github-script can't do (no `@actions/artifact`

@@ -141,7 +141,7 @@ runs:
     # --------------------------------------------------------------------------
     - name: "🧩 Resolve dotnet format config & changed files"
       id: resolve-config
-      uses: actions/github-script@v7
+      uses: actions/github-script@v9
       env:
         ACTION: ${{ inputs.action }}
         SEVERITY_LEVEL: ${{ inputs.severityLevel }}
@@ -227,7 +227,7 @@ runs:
 
     - name: "📦 Upload dotnet format report"
       if: ${{ always() }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7.0.1
       with:
         name: ${{ inputs.dotnetFormatReportArtifactName }}
         path: ${{ github.workspace }}/.dotnet-format
@@ -235,7 +235,7 @@ runs:
 
     - name: "📝 Post dotnet format report"
       id: format-report
-      uses: actions/github-script@v7
+      uses: actions/github-script@v9
       env:
         WORKSPACE: ${{ inputs.workspace }}
         REPORT_DIR: ${{ github.workspace }}/.dotnet-format
@@ -387,7 +387,7 @@ runs:
     - name: "📝 Post jscpd report"
       id: jscpd
       if: ${{ inputs.jscpdCheck == 'true' }}
-      uses: actions/github-script@v7
+      uses: actions/github-script@v9
       env:
         WORKSPACE: ${{ inputs.workspace }}
         SCAN_PATH: ${{ steps.jscpd-run.outputs.scanPath }}
@@ -405,7 +405,7 @@ runs:
 
     - name: "📦 Upload jscpd report"
       if: ${{ always() && inputs.jscpdCheck == 'true' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7.0.1
       with:
         name: ${{ inputs.jscpdReportArtifactName }}
         path: ${{ github.workspace }}/${{ inputs.jscpdReportArtifactName }}
