@@ -57,6 +57,9 @@ importers:
       '@babel/preset-env':
         specifier: ^7.23.6
         version: 7.29.7(@babel/core@7.29.7)
+      '@jest/globals':
+        specifier: ^29.7.0
+        version: 29.7.0
       '@octokit/types':
         specifier: ^12.4.0
         version: 12.6.0

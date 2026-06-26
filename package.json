@@ -45,6 +45,7 @@
         "@babel/core": "^7.23.6",
         "@babel/preset-env": "^7.23.6",
         "@octokit/types": "^12.4.0",
+        "@jest/globals": "^29.7.0",
         "@types/jest": "^29.5.11",
         "@types/js-yaml": "^4.0.9",
         "@types/node": "^18.19.3",
