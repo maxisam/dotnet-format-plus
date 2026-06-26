@@ -78,40 +78,43 @@ bundled), so it uses the standard `upload-artifact` action — simpler than the 
 - **T3** ✅: `scripts/report-common.mjs` (shared footer) + `scripts/dotnet-report.mjs` +
   `scripts/jscpd-report.mjs` — port JSON→markdown with the GitHub blob links (context
   injected, not read from `@actions/github`).
-- **T4** ✅: Ported the existing `node:test` suite onto these helpers (33 tests; config-merge
+- **T4** ✅: Ported the existing `node:test` suite onto these helpers (config-merge
   / arg / report coverage). YAML via inline `js-yaml` parse or `npx -y js-yaml` conversion —
   no repo `node_modules` needed at action runtime.
 
-### Phase 2 — composite skeleton
-- **T5**: Rewrite `action.yml` → composite, same inputs/outputs; ship `problem-matcher.json`
+### Phase 2 — composite skeleton ✅
+- **T5** ✅: Rewrite `action.yml` → composite, same inputs/outputs; ship `problem-matcher.json`
   at action root; matcher add/remove via workflow commands.
 
-### Phase 3 — dotnet format path
-- **T6**: config-resolve step → temp JSON.
-- **T7**: changed-files github-script step.
-- **T8**: format runner (shell loop over blocks).
-- **T9**: report→summary→comment github-script step (reuse existing-comment-by-header +
+### Phase 3 — dotnet format path ✅
+- **T6** ✅: config-resolve step → temp JSON.
+- **T7** ✅: changed-files github-script step.
+- **T8** ✅: format runner (shell loop over blocks).
+- **T9** ✅: report→summary→comment github-script step (reuse existing-comment-by-header +
   bot-user matching).
-- **T10**: `upload-artifact` (dotnet).
-- **T11**: commit/push shell step + `hasChanges`.
+- **T10** ✅: `upload-artifact` (dotnet).
+- **T11** ✅: commit/push shell step + `hasChanges`.
 
-### Phase 4 — jscpd path
-- **T12**: jscpd runner (shell).
-- **T13**: jscpd report github-script step (threshold, annotations, comment, summary,
+### Phase 4 — jscpd path ✅
+- **T12** ✅: jscpd runner (shell).
+- **T13** ✅: jscpd report github-script step (threshold, annotations, comment, summary,
   `hasDuplicates`).
-- **T14**: `upload-artifact` (jscpd).
+- **T14** ✅: `upload-artifact` (jscpd) plus cleanup after upload.
 
-### Phase 5 — failFast + teardown of the build pipeline
-- **T15**: `failFast` gate.
-- **T16**: Delete `dist/`, drop `package`/`ncc`/`finalize-dist`, remove `@actions/*`,
+### Phase 5 — failFast + teardown of the build pipeline ✅
+- **T15** ✅: `failFast` gate.
+- **T16** ✅: Delete `dist/`, drop `package`/`ncc`/`finalize-dist`, remove `@actions/*`,
   `@octokit/rest`, `deepmerge` from deps (keep only what helpers/tests need).
   `package.json` shrinks to lint + test.
-- **T17**: Update CI: drop the dist-sync check; run biome + helper tests only.
+- **T17** ✅: Update CI: drop the dist-sync check; run biome + helper tests only.
 
-### Phase 6 — docs & end-to-end
-- **T18**: Rewrite README (no build step) + WALKTHROUGH for the composite migration.
-- **T19**: Run `test-dotnet-format.yml` (both matrix jobs) and diff behavior vs. current:
-  PR comment, summary, `hasChanges`/`hasDuplicates`, annotations.
+### Phase 6 — docs & end-to-end ✅
+- **T18** ✅: Rewrite README (no build step) + WALKTHROUGH for the composite migration.
+- **T19** ✅: Local verification completed (`pnpm install --frozen-lockfile`, `pnpm run
+  format-check`, `pnpm test`, `pnpm all`, `git diff --check`, action metadata parse).
+  GitHub-hosted end-to-end confirmation remains the release gate: run
+  `test-dotnet-format.yml` (both fixture jobs) and verify PR comment, summary,
+  `hasChanges`/`hasDuplicates`, and annotations.
 
 ## Parity-risk checklist (things that can silently diverge)
 
