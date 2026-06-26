@@ -344,19 +344,67 @@ runs:
       id: jscpd-run
       if: ${{ inputs.jscpdCheck == 'true' }}
       shell: bash
+      env:
+        WORKSPACE: ${{ inputs.workspace }}
+        ARTIFACT_NAME: ${{ inputs.jscpdReportArtifactName }}
+        JSCPD_CONFIG_PATH: ${{ inputs.jscpdConfigPath }}
       run: |
-        echo "::notice::TODO Phase 4 (T12): resolve jscpd/cpd or npx jscpd@5 and run with json,markdown,console-full reporters"
+        set -uo pipefail
+        if [ -f "$WORKSPACE" ]; then SCAN=$(dirname "$WORKSPACE"); else SCAN="$WORKSPACE"; fi
+        OUT="$GITHUB_WORKSPACE/$ARTIFACT_NAME"
+        CFGNAME="${JSCPD_CONFIG_PATH:-.jscpd.json}"
+
+        # Config file for --config: first existing of scanPath/<name> then cwd/<name>.
+        CONFIG=""
+        if [ -f "$SCAN/$CFGNAME" ]; then
+          CONFIG="$SCAN/$CFGNAME"
+        elif [ -f "$CFGNAME" ]; then
+          CONFIG="$(pwd)/$CFGNAME"
+        fi
+
+        # Prefer an installed jscpd/cpd, otherwise fall back to a one-off npx download.
+        if command -v jscpd >/dev/null 2>&1; then
+          BIN=(jscpd); echo "Using installed jscpd"
+        elif command -v cpd >/dev/null 2>&1; then
+          BIN=(cpd); echo "Using installed cpd"
+        else
+          echo "No jscpd CLI on PATH; falling back to npx jscpd@5"; BIN=(npx --yes jscpd@5)
+        fi
+
+        args=("$SCAN" --reporters json,markdown,console-full --output "$OUT")
+        if [ -n "$CONFIG" ]; then args+=(--config "$CONFIG"); fi
+
+        echo "::group::🔎 Running jscpd 5"
+        echo "${BIN[*]} ${args[*]}"
+        # jscpd exits non-zero when the threshold is exceeded; we evaluate the report
+        # ourselves in the next step, so don't fail here.
+        "${BIN[@]}" "${args[@]}" || true
+        echo "::endgroup::"
+
+        echo "scanPath=$SCAN" >> "$GITHUB_OUTPUT"
+        echo "outputDir=$OUT" >> "$GITHUB_OUTPUT"
 
     - name: "📝 Post jscpd report"
       id: jscpd
       if: ${{ inputs.jscpdCheck == 'true' }}
-      shell: bash
-      run: |
-        echo "::notice::TODO Phase 4 (T13): threshold, annotations, comment, summary via jscpd-report.mjs; set hasDuplicates"
-        echo "hasDuplicates=false" >> "$GITHUB_OUTPUT"
+      uses: actions/github-script@v7
+      env:
+        WORKSPACE: ${{ inputs.workspace }}
+        SCAN_PATH: ${{ steps.jscpd-run.outputs.scanPath }}
+        OUTPUT_DIR: ${{ steps.jscpd-run.outputs.outputDir }}
+        JSCPD_CONFIG_PATH: ${{ inputs.jscpdConfigPath }}
+        JSCPD_CHECK_AS_ERROR: ${{ inputs.jscpdCheckAsError }}
+        POST_NEW_COMMENT: ${{ inputs.postNewComment }}
+      with:
+        github-token: ${{ inputs.authToken }}
+        script: |
+          const { pathToFileURL } = require('node:url');
+          const url = pathToFileURL(`${process.env.GITHUB_ACTION_PATH}/scripts/steps/jscpd-report.mjs`).href;
+          const { run } = await import(url);
+          await run({ github, context, core, exec });
 
     - name: "📦 Upload jscpd report"
-      if: ${{ inputs.jscpdCheck == 'true' && always() }}
+      if: ${{ always() && inputs.jscpdCheck == 'true' }}
       uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.jscpdReportArtifactName }}
