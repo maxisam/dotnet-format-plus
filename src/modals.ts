@@ -1,4 +1,38 @@
-import { IBlamedLines, IStatistic, ITokenLocation } from '@jscpd/core';
+// jscpd 5 is a Rust CLI with no Node API; these mirror the shape of its JSON
+// report (previously imported from @jscpd/core, which is no longer a dependency).
+export interface ITokenLocation {
+    line: number;
+    column?: number;
+    position?: number;
+}
+
+export interface IBlamedLines {
+    [line: string]: {
+        rev: string;
+        author: string;
+        date: string;
+        line: string;
+    };
+}
+
+export interface IStatisticRow {
+    lines: number;
+    tokens: number;
+    sources: number;
+    duplicatedLines: number;
+    duplicatedTokens: number;
+    clones: number;
+    percentage: number;
+    percentageTokens: number;
+    newDuplicatedLines: number;
+    newClones: number;
+}
+
+export interface IStatistic {
+    total: IStatisticRow;
+    detectionDate: string;
+    formats: Record<string, unknown>;
+}
 
 export enum INPUTS {
     authToken = 'authToken',
@@ -104,7 +138,9 @@ export interface IJsonReport {
 }
 
 export interface IDotnetFormatArgs {
-    isEabled: boolean;
+    isEnabled?: boolean;
+    /** @deprecated misspelled legacy key, kept for backward compatibility. Use `isEnabled`. */
+    isEabled?: boolean;
     include?: string[];
     exclude?: string[];
     verbosity?: VerbosityType;
