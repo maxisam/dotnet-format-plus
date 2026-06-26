@@ -1,133 +1,125 @@
-# Modernization Walkthrough — Node 24 · jscpd 5 · .NET 10
+# Composite Action Walkthrough
 
-This document explains the design decisions behind the 2026 modernization of
-`dotnet-format-plus`, the migration flow, and how to test it.
+This document explains the current `dotnet-format-plus` architecture, the migration
+away from the bundled TypeScript action, and the checks used to keep behavior aligned.
 
-## Why this was needed
+## Why this changed
 
-The action was effectively broken: `action.yml` declared `runs.using: "node16"`,
-a runtime GitHub Actions has removed, so it would not start on current runners.
-While fixing that we also modernized the whole stack: Node 24, jscpd 5, .NET 10,
-and a leaner toolchain (Biome, `node:test`), plus several latent-bug fixes.
+The old action shipped a compiled `dist/index.js` bundle produced by `ncc`. That made
+the repository carry both source and generated JavaScript, plus a runtime dependency
+set for the GitHub Actions toolkit, artifact client, Octokit, config merge, and YAML.
 
-## Decisions
+Most of this action is orchestration around existing command-line tools:
 
-### Language: stay TypeScript
+- `dotnet format`
+- `jscpd`
+- `git`
+- GitHub PR comments, annotations, summaries, and outputs
 
-The action orchestrates the GitHub API (octokit), generates markdown reports, and
-drives external CLIs (`dotnet format`, `jscpd`). A Docker action in Go/Rust/C#
-would add cold-start cost, force Linux-only runners, and abandon the mature
-`@actions/*` toolkit — with no real upside here. We kept it a Node JS action and
-bumped the runtime to `node24`.
+GitHub composite actions are a better fit for that shape. The current action puts the
+workflow in `action.yml`, uses shell for CLI calls, and uses
+`actions/github-script` for GitHub API and `@actions/core` operations. The remaining
+logic that would be risky in shell stays in small ES modules under `scripts/`.
 
-### Module system: full ESM
+## Runtime Shape
 
-Running tests natively with `node --test` requires real ES modules with explicit
-file extensions, while `ncc` bundles the entrypoint. To keep tsc and Node
-consistent we made the package ESM (`"type": "module"`) and:
+`action.yml` is the product. There is no build step, no `src/` tree, and no committed
+`dist/` bundle.
 
-- Added `.ts` extensions to every relative import (required by `nodenext`
-  resolution and native execution).
-- Enabled `rewriteRelativeImportExtensions` (TS 5.7+) instead of
-  `allowImportingTsExtensions`, because `ncc` emits during bundling and
-  `allowImportingTsExtensions` requires `noEmit`.
-- Enabled `verbatimModuleSyntax`, which forces explicit `import type` for
-  type-only imports. This is mandatory: Node's type-stripping cannot tell a type
-  from a value in a mixed import (e.g. the `INPUTS` enum is a value but
-  `IInputs` is a type), so unmarked type imports become runtime errors.
-- Replaced `__dirname` in `problem-matcher.ts` with
-  `dirname(fileURLToPath(import.meta.url))` (no `__dirname` in ESM).
+The action has three kinds of code:
 
-`ncc` detects `"type": "module"` and emits an **ESM** bundle (plus its own
-`dist/package.json` with `{"type":"module"}`), so no CommonJS shim is needed.
-`scripts/finalize-dist.mjs` copies `problem-matcher.json` next to the bundle.
+- Shell steps run `dotnet restore`, `dotnet format`, `jscpd`, cleanup, and git commit/push.
+- `actions/github-script` steps resolve config, list changed PR files, post reports, set summaries, emit annotations, and set outputs.
+- `scripts/*.mjs` helpers hold pure logic: deep merge, config path resolution, `dotnet format` argv planning, report markdown, and annotation payloads.
 
-### Tests: `node:test`
+The github-script wrappers in `scripts/steps/*.mjs` are intentionally thin. They adapt
+GitHub-provided objects (`github`, `context`, `core`, `exec`) and environment inputs
+into calls to the pure helpers.
 
-Jest + ts-jest + babel were removed in favor of Node 24's built-in runner.
+## Dotnet Format Flow
 
-- The test script uses `--experimental-transform-types` because the source uses
-  `enum`s (type-stripping alone cannot transform enums). The legacy
-  `const enum FileStatus` was changed to a regular `enum`.
-- Module mocking was avoided entirely: `readConfig.test.ts` writes real temp
-  files instead of mocking `fs`, and `dotnet.test.ts` captures `process.stdout`
-  to assert the `::error::` emitted by `core.setFailed` — so no
-  `--experimental-test-module-mocks` flag is needed.
-- JSON is imported with an import attribute: `... with { type: 'json' }`.
+The dotnet path is split into a planning step and shell execution.
 
-### Lint/format: Biome
+1. `scripts/steps/resolve-config.mjs` reads action inputs from environment variables.
+2. It merges defaults, root config, and workspace config through `scripts/read-config.mjs`.
+3. It optionally lists changed PR files through the GitHub API.
+4. `scripts/format-args.mjs` turns the merged config into ready-to-run `dotnet` argv arrays.
+5. The plan is written to `$RUNNER_TEMP/df-config.json`.
+6. The shell step runs each planned `dotnet format` command and writes format status to outputs.
+7. `scripts/steps/format-report.mjs` converts non-empty report JSON files into markdown, writes the job summary, and creates or updates a PR comment.
+8. The commit step removes report files, sets `hasChanges`, and optionally commits and pushes fixes for pull requests.
 
-ESLint 8 (legacy config) + Prettier were replaced by a single `biome.json`
-mirroring the old Prettier settings (150 width, 4-space, single quotes, no
-trailing commas, arrow parens avoided). Biome also organizes imports.
+The shell step treats formatter findings separately from runner failures. Formatting
+findings are gated by `failFast`; missing SDKs, invalid workspaces, restore failures,
+or crashes fail the action directly.
 
-### Package manager: pnpm
+## JSCPD Flow
 
-Main migrated from yarn to pnpm (`packageManager: pnpm@11.9.0`) while this branch
-was in flight. That change was merged in: the lockfile is `pnpm-lock.yaml`, the
-`all` script and CI use pnpm (`pnpm/action-setup` + `cache: pnpm`), and main's
-`js-yaml` named-import (`load as yamlLoad`) was adopted.
+The jscpd path stays close to the previous behavior but runs through the CLI.
 
-### jscpd 5: shell out to the CLI
+1. The shell step resolves the scan path from `workspace`.
+2. It chooses an existing `jscpd` or `cpd` binary from `PATH`, otherwise falls back to `npx --yes jscpd@5`.
+3. It runs `jscpd` with `json,markdown,console-full` reporters into the configured artifact directory.
+4. `scripts/steps/jscpd-report.mjs` reads `jscpd-report.json`, merges threshold config, writes the markdown summary/comment, emits annotations, sets `hasDuplicates`, and fails when `jscpdCheckAsError` and the threshold is exceeded.
+5. The artifact is uploaded and the report directory is removed so later workflow steps see a clean workspace.
 
-This was the biggest surprise. jscpd 5 is a **Rust rewrite**: the `jscpd@5` npm
-package ships only a CLI wrapper around a platform-specific binary and exposes
-**no Node API**. Its building-block libraries (`@jscpd/core`/`finder`) stop at
-v4 and v4's `@jscpd/finder` also dropped the old high-level `detectClones`
-function.
+The action still ignores the jscpd CLI's threshold exit code and evaluates the JSON
+report itself. That preserves the previous contract.
 
-Per the maintainer's choice, the action now **shells out to the jscpd 5 CLI**:
+## Config Behavior
 
-- `src/duplicated.ts` prefers a `jscpd` or `cpd` binary already on `PATH`
-  (`io.which`) and otherwise falls back to `npx --yes jscpd@5`.
-- It runs `--reporters json,markdown,console-full --output <dir>` and consumes
-  the JSON report. The Rust engine's JSON schema (`duplicates[].firstFile`,
-  `statistics.total.percentage`) matches the old shape, so the existing report
-  parsing and threshold logic were preserved; the `@jscpd/core` type imports
-  were replaced with small local interfaces in `modals.ts`.
-- All `@jscpd/*` dependencies were removed from `package.json`.
+Config precedence is:
 
-Trade-off: the npx fallback downloads the binary on first run. Installing
-`jscpd`/`cpd` on the runner avoids that.
+1. action-derived defaults
+2. config path from the repository root
+3. same config filename inside `workspace`
 
-### .NET 10
+Arrays are concatenated and de-duplicated while preserving first occurrence order.
+JSON config is parsed directly. YAML config is loaded on demand by calling
+`npx -y js-yaml`, which keeps the action runtime dependency-free.
 
-Test projects target `net10.0`, a root `global.json` pins the SDK to `10.0.x`,
-and `test-dotnet-format.yml` adds `actions/setup-dotnet@v4` (runners do not ship
-.NET 10 yet). The `dotnet format` flags the action emits are unchanged (stable
-since .NET 6).
+The documented `isEnabled` key and historical misspelling `isEabled` are both
+accepted. `isEnabled` wins when both are present.
 
-## Bug fixes folded in
+## Repository Layout
 
-- **`isEabled` → `isEnabled` (both accepted).** The code read the misspelled
-  `isEabled`, so enabling sub-options via the documented `isEnabled` silently did
-  nothing. `getOptions` now omits the enabled flag from defaults (so it cannot
-  mask a user value) and resolves `isEnabled ?? isEabled ?? <default>`.
-- **`--include` builder** no longer emits a literal `undefined` and passes a
-  clean space-joined list.
-- **Duplicate `git status -s`** call removed.
-- **Test workflow** reads the real `hasChanges` / `hasDuplicates` outputs.
-- Dropped `node-fetch` (native `fetch`); `rm -rf` replaced by `io.rmRF`.
+- `action.yml` is the composite action entrypoint.
+- `problem-matcher.json` is referenced directly from `action.yml`.
+- `scripts/*.mjs` contains pure helper logic.
+- `scripts/steps/*.mjs` contains github-script wrappers.
+- `__tests__/*.test.mjs` covers helper behavior with Node's built-in test runner.
+- `__tests__/dotnet/**` contains .NET 10 fixtures for the end-to-end workflow.
+- `.github/workflows/test-dotnet-format.yml` exercises the action against those fixtures.
 
-## How to test
+## Local Checks
+
+Run the same checks as CI:
 
 ```bash
-pnpm install
-pnpm build          # tsc --noEmit typecheck
-pnpm lint           # biome lint
-pnpm format-check   # biome check (lint + format)
-pnpm test           # node --test (16 tests)
-pnpm package        # ncc -> dist/index.js (ESM)
-pnpm all            # the full pipeline CI runs
+pnpm install --frozen-lockfile
+pnpm run format-check
+pnpm test
+pnpm all
 ```
 
-Smoke-test the bundle loads as ESM (expect a "missing input" failure, not a
-module error):
+Useful extra checks:
 
 ```bash
-GITHUB_ACTIONS=true node dist/index.js
+git diff --check origin/main...HEAD
+node -e "import('js-yaml').then(y=>{const fs=require('fs'); const doc=y.load(fs.readFileSync('action.yml','utf8')); console.log(doc.runs.using, doc.runs.steps.length, Object.keys(doc.outputs));})"
 ```
 
-End-to-end is covered by `.github/workflows/test-dotnet-format.yml`, which runs
-the action against the `net10.0` fixtures with `setup-dotnet 10.0.x` and
-exercises both `dotnet format` and the jscpd 5 CLI path.
+End-to-end behavior requires GitHub Actions because the composite action uses
+`actions/github-script`, artifact upload, workflow commands, PR context, and
+`GITHUB_OUTPUT`/`GITHUB_ENV`. The workflow `.github/workflows/test-dotnet-format.yml`
+runs both fixture jobs with `actions/setup-dotnet@v4` and `.NET 10`.
+
+## Release Checklist
+
+- `pnpm install --frozen-lockfile`
+- `pnpm run format-check`
+- `pnpm test`
+- `pnpm all`
+- `git diff --check origin/main...HEAD`
+- Run `.github/workflows/test-dotnet-format.yml` in GitHub Actions for both fixture jobs.
+- Confirm PR comments, summaries, annotations, `hasChanges`, and `hasDuplicates` match the expected behavior.

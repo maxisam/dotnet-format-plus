@@ -5,23 +5,20 @@ on:
   pull_request:
     paths-ignore:
       - "**.md"
-      - dist/**
       - __tests__/dotnet/**
   push:
     branches:
       - main
     paths-ignore:
       - "**.md"
-      - dist/**
       - __tests__/dotnet/**
+
 jobs:
-  build:
-    name: Build
+  check:
+    name: Lint & Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v6
@@ -34,37 +31,8 @@ jobs:
 
       - run: pnpm install
 
-      - run: |
-          pnpm all
+      - name: Lint & format check
+        run: pnpm run format-check
 
-      - name: Compare the expected and actual dist/ directories
-        id: diff
-        run: |
-          if [ "$(git diff --ignore-space-at-eol dist/ | wc -l)" -gt "0" ]; then
-            echo "Detected uncommitted changes after build.  See status below:"
-            git diff
-            echo "diff=true" >> $GITHUB_ENV
-          else
-            echo "diff=false" >> $GITHUB_ENV
-          fi
-
-      - name: commit build
-        id: commit
-        if: ${{ env.diff == 'true' }}
-        run: |
-          git config --local user.email "maxisam@gmail.com"
-          git config --local user.name "maxisam"
-          git add dist/
-          git commit -m "chore: build, dist updated"
-          git push origin ${{ github.event.pull_request.head.ref || github.ref_name }}
-          sha=$(git rev-parse HEAD)
-          echo "sha=$sha" >> $GITHUB_OUTPUT
-
-      - name: Status update
-        if: ${{ env.diff == 'true' }}
-        uses: myrotvorets/set-commit-status-action@v2.0.0
-        with:
-          status: "success"
-          sha: ${{ steps.commit.outputs.sha }}
-          description: "Build Dist Updated"
-          context: "Build Dist Updated"
+      - name: Test
+        run: pnpm test
