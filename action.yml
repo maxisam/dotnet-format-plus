@@ -102,7 +102,7 @@ inputs:
 
   jscpdReportArtifactName:
     description: "Name of the artifact containing the JSCPD report"
-    required: false 
+    required: false
     default: "jscpd-report"
 
   dotnetFormatReportArtifactName:
@@ -113,8 +113,108 @@ inputs:
 outputs:
   hasChanges:
     description: "A value indicating if any files were formatted. If `action` is `check` we will inspect the exit code of `dotnet format` to be <> 0. If `action` is `fix` we see if there are changes to files with `git status -s`."
+    value: ${{ steps.format.outputs.hasChanges }}
   hasDuplicates:
     description: "A value indicating if any files were duplicated when `jscpdCheck` is `true`."
+    value: ${{ steps.jscpd.outputs.hasDuplicates }}
+
 runs:
-  using: "node24"
-  main: "dist/index.js"
+  using: "composite"
+  steps:
+    # --------------------------------------------------------------------------
+    # Setup
+    # --------------------------------------------------------------------------
+    - name: "🛠️ Setup dotnet environment"
+      shell: bash
+      run: |
+        echo "DOTNET_CLI_TELEMETRY_OPTOUT=true" >> "$GITHUB_ENV"
+        echo "DOTNET_NOLOGO=true" >> "$GITHUB_ENV"
+        echo "🔍 cwd: $(pwd)"
+
+    - name: "➕ Add problem matcher"
+      if: ${{ inputs.problemMatcherEnabled == 'true' }}
+      shell: bash
+      run: echo "::add-matcher::${{ github.action_path }}/problem-matcher.json"
+
+    # --------------------------------------------------------------------------
+    # dotnet format  (Phase 3 — T6..T11)
+    # --------------------------------------------------------------------------
+    - name: "🧩 Resolve dotnet format config"
+      id: resolve-config
+      shell: bash
+      run: |
+        echo "::notice::TODO Phase 3 (T6): resolve config via read-config.mjs + format-args.mjs -> $RUNNER_TEMP/df-config.json"
+
+    - name: "🔀 Resolve changed files"
+      id: changed-files
+      if: ${{ inputs.onlyChangedFiles == 'true' && github.event_name == 'pull_request' }}
+      shell: bash
+      run: |
+        echo "::notice::TODO Phase 3 (T7): list PR changed files via github-script"
+
+    - name: "🏃 Run dotnet format"
+      id: dotnet-format
+      shell: bash
+      run: |
+        echo "::notice::TODO Phase 3 (T8): run dotnet format per enabled block from df-config.json"
+
+    - name: "📝 Post dotnet format report"
+      id: format-report
+      shell: bash
+      run: |
+        echo "::notice::TODO Phase 3 (T9): build markdown via dotnet-report.mjs, set summary + PR comment"
+
+    - name: "📦 Upload dotnet format report"
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.dotnetFormatReportArtifactName }}
+        path: ${{ github.workspace }}/.dotnet-format
+        if-no-files-found: ignore
+
+    - name: "💾 Commit & push fixes"
+      id: format
+      shell: bash
+      run: |
+        echo "::notice::TODO Phase 3 (T11): git commit/push with rebase-retry; set hasChanges"
+        echo "hasChanges=false" >> "$GITHUB_OUTPUT"
+
+    - name: "➖ Remove problem matcher"
+      if: ${{ inputs.problemMatcherEnabled == 'true' }}
+      shell: bash
+      run: echo "::remove-matcher owner=dotnet-format-plus::"
+
+    # --------------------------------------------------------------------------
+    # jscpd  (Phase 4 — T12..T14)
+    # --------------------------------------------------------------------------
+    - name: "🔎 Run jscpd"
+      id: jscpd-run
+      if: ${{ inputs.jscpdCheck == 'true' }}
+      shell: bash
+      run: |
+        echo "::notice::TODO Phase 4 (T12): resolve jscpd/cpd or npx jscpd@5 and run with json,markdown,console-full reporters"
+
+    - name: "📝 Post jscpd report"
+      id: jscpd
+      if: ${{ inputs.jscpdCheck == 'true' }}
+      shell: bash
+      run: |
+        echo "::notice::TODO Phase 4 (T13): threshold, annotations, comment, summary via jscpd-report.mjs; set hasDuplicates"
+        echo "hasDuplicates=false" >> "$GITHUB_OUTPUT"
+
+    - name: "📦 Upload jscpd report"
+      if: ${{ inputs.jscpdCheck == 'true' && always() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.jscpdReportArtifactName }}
+        path: ${{ github.workspace }}/${{ inputs.jscpdReportArtifactName }}
+        if-no-files-found: ignore
+
+    # --------------------------------------------------------------------------
+    # Fail handling  (Phase 5 — T15)
+    # --------------------------------------------------------------------------
+    - name: "🚦 Fail fast on format issues"
+      if: ${{ inputs.failFast == 'true' }}
+      shell: bash
+      run: |
+        echo "::notice::TODO Phase 5 (T15): fail the action when dotnet format reported issues"
