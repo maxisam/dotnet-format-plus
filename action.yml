@@ -139,30 +139,67 @@ runs:
     # --------------------------------------------------------------------------
     # dotnet format  (Phase 3 — T6..T11)
     # --------------------------------------------------------------------------
-    - name: "🧩 Resolve dotnet format config"
+    - name: "🧩 Resolve dotnet format config & changed files"
       id: resolve-config
-      shell: bash
-      run: |
-        echo "::notice::TODO Phase 3 (T6): resolve config via read-config.mjs + format-args.mjs -> $RUNNER_TEMP/df-config.json"
-
-    - name: "🔀 Resolve changed files"
-      id: changed-files
-      if: ${{ inputs.onlyChangedFiles == 'true' && github.event_name == 'pull_request' }}
-      shell: bash
-      run: |
-        echo "::notice::TODO Phase 3 (T7): list PR changed files via github-script"
+      uses: actions/github-script@v7
+      env:
+        ACTION: ${{ inputs.action }}
+        SEVERITY_LEVEL: ${{ inputs.severityLevel }}
+        LOG_LEVEL: ${{ inputs.logLevel }}
+        NUGET_CONFIG_PATH: ${{ inputs.nugetConfigPath }}
+        DOTNET_FORMAT_CONFIG_PATH: ${{ inputs.dotnetFormatConfigPath }}
+        PROJECT_FILE_NAME: ${{ inputs.projectFileName }}
+        ONLY_CHANGED_FILES: ${{ inputs.onlyChangedFiles }}
+        WORKSPACE: ${{ inputs.workspace }}
+      with:
+        github-token: ${{ inputs.authToken }}
+        script: |
+          const { pathToFileURL } = require('node:url');
+          const url = pathToFileURL(`${process.env.GITHUB_ACTION_PATH}/scripts/steps/resolve-config.mjs`).href;
+          const { run } = await import(url);
+          await run({ github, context, core, exec });
 
     - name: "🏃 Run dotnet format"
       id: dotnet-format
       shell: bash
       run: |
-        echo "::notice::TODO Phase 3 (T8): run dotnet format per enabled block from df-config.json"
+        set -uo pipefail
+        PLAN="$RUNNER_TEMP/df-config.json"
+        WORKSPACE=$(jq -r '.workspace' "$PLAN")
+        NUGET=$(jq -r '.nugetConfigPath' "$PLAN")
+        REPORT_DIR=$(jq -r '.reportDir' "$PLAN")
+        mkdir -p "$REPORT_DIR"
 
-    - name: "📝 Post dotnet format report"
-      id: format-report
-      shell: bash
-      run: |
-        echo "::notice::TODO Phase 3 (T9): build markdown via dotnet-report.mjs, set summary + PR comment"
+        if [ -n "$NUGET" ] && [ "$NUGET" != "null" ]; then
+          echo "::group::📦 Nuget Restore"
+          dotnet restore -p:RestoreConfigFile="${WORKSPACE}${NUGET}" "${WORKSPACE}" || true
+          echo "::endgroup::"
+        fi
+
+        count=$(jq '.commands | length' "$PLAN")
+        echo "Running $count dotnet format command(s)"
+        format_result=true
+        for i in $(seq 0 $((count - 1))); do
+          readarray -t args < <(jq -r ".commands[$i][]" "$PLAN")
+          echo "::group::🏃 dotnet ${args[*]}"
+          out=$(dotnet "${args[@]}" 2>&1) || true
+          printf '%s\n' "$out"
+          echo "::endgroup::"
+          last=$(printf '%s\n' "$out" | tail -n 1)
+          if ! printf '%s' "$last" | grep -q 'Format complete'; then
+            format_result=false
+          fi
+          if printf '%s' "$out" | grep -q 'Unable to fix'; then
+            echo "::error title=DOTNET FORMAT Check::Unable to fix all formatting issues"
+            format_result=false
+          fi
+        done
+        echo "formatResult=$format_result" >> "$GITHUB_OUTPUT"
+        if [ "$format_result" = "true" ]; then
+          echo "::notice title=DOTNET FORMAT Check::✅ DOTNET FORMAT SUCCESS"
+        else
+          echo "::error title=DOTNET FORMAT Check::DOTNET FORMAT FAILED"
+        fi
 
     - name: "📦 Upload dotnet format report"
       if: ${{ always() }}
@@ -172,12 +209,101 @@ runs:
         path: ${{ github.workspace }}/.dotnet-format
         if-no-files-found: ignore
 
+    - name: "📝 Post dotnet format report"
+      id: format-report
+      uses: actions/github-script@v7
+      env:
+        WORKSPACE: ${{ inputs.workspace }}
+        REPORT_DIR: ${{ github.workspace }}/.dotnet-format
+        POST_NEW_COMMENT: ${{ inputs.postNewComment }}
+      with:
+        github-token: ${{ inputs.authToken }}
+        script: |
+          const { pathToFileURL } = require('node:url');
+          const url = pathToFileURL(`${process.env.GITHUB_ACTION_PATH}/scripts/steps/format-report.mjs`).href;
+          const { run } = await import(url);
+          await run({ github, context, core });
+
     - name: "💾 Commit & push fixes"
       id: format
       shell: bash
+      env:
+        SKIP_COMMIT: ${{ inputs.skipCommit }}
+        COMMIT_USER_NAME: ${{ inputs.commitUserName }}
+        COMMIT_USER_EMAIL: ${{ inputs.commitUserEmail }}
+        COMMIT_MESSAGE: ${{ inputs.commitMessage }}
       run: |
-        echo "::notice::TODO Phase 3 (T11): git commit/push with rebase-retry; set hasChanges"
-        echo "hasChanges=false" >> "$GITHUB_OUTPUT"
+        set -uo pipefail
+        PLAN="$RUNNER_TEMP/df-config.json"
+        REPORT_DIR=$(jq -r '.reportDir' "$PLAN")
+        IS_DRY_RUN=$(jq -r '.isDryRun' "$PLAN")
+
+        # Remove report files so they don't count as changes or get committed.
+        rm -rf "$REPORT_DIR"
+
+        if [ "$IS_DRY_RUN" = "true" ]; then
+          echo "::notice title=DOTNET FORMAT Check::Dry run mode. No changes will be committed."
+          echo "hasChanges=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        if [ -z "$(git status -s)" ]; then
+          echo "Did not find any changed files"
+          echo "hasChanges=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        echo "::warning title=DOTNET FORMAT Check::Dotnet Format File Changed: true"
+        echo "hasChanges=true" >> "$GITHUB_OUTPUT"
+
+        if [ "$SKIP_COMMIT" = "true" ] || [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
+          echo "Skipping commit (skipCommit=$SKIP_COMMIT, event=$GITHUB_EVENT_NAME)"
+          exit 0
+        fi
+
+        BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+        echo "Current branch: \"$BRANCH\""
+        CWD="$(pwd)"
+
+        git config --global --add safe.directory "$CWD" || true
+        git config user.name "$COMMIT_USER_NAME"
+        git config user.email "$COMMIT_USER_EMAIL"
+        git config core.ignorecase false
+
+        CURRENT=$(git branch --show-current)
+        if [ "$CURRENT" != "$BRANCH" ]; then
+          echo "On \"$CURRENT\"; checking out \"$BRANCH\""
+          git fetch origin "$BRANCH" --depth=1
+          git stash
+          git checkout -b "$BRANCH" FETCH_HEAD
+          git stash pop
+        fi
+
+        git add .
+        git commit -m "$COMMIT_MESSAGE"
+
+        attempt=1
+        while [ "$attempt" -le 3 ]; do
+          echo "Pushing changes… (attempt $attempt of 3)"
+          set +e
+          push_out=$(git push --porcelain origin "$BRANCH:$BRANCH" 2>push_err.log)
+          set -e
+          push_err=$(cat push_err.log 2>/dev/null || true)
+          rm -f push_err.log
+          if printf '%s' "$push_out" | grep -qE '\[rejected\]|\[remote rejected\]'; then
+            echo "Updates were rejected; fetching and rebasing onto $BRANCH"
+            git fetch
+            git pull --rebase
+          elif printf '%s' "$push_err" | grep -q '^fatal:'; then
+            echo "$push_err"
+            exit 1
+          else
+            echo "Changes pushed"
+            exit 0
+          fi
+          attempt=$((attempt + 1))
+        done
+        echo "Attempt limit exceeded"
+        exit 1
 
     - name: "➖ Remove problem matcher"
       if: ${{ inputs.problemMatcherEnabled == 'true' }}
@@ -214,7 +340,8 @@ runs:
     # Fail handling  (Phase 5 — T15)
     # --------------------------------------------------------------------------
     - name: "🚦 Fail fast on format issues"
-      if: ${{ inputs.failFast == 'true' }}
+      if: ${{ inputs.failFast == 'true' && steps.dotnet-format.outputs.formatResult == 'false' }}
       shell: bash
       run: |
-        echo "::notice::TODO Phase 5 (T15): fail the action when dotnet format reported issues"
+        echo "::error title=DOTNET FORMAT Check::Action failed with format issue"
+        exit 1
