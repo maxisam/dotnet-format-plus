@@ -1,9 +1,9 @@
+import * as fs from 'node:fs';
+import { resolve } from 'node:path';
+import { inspect } from 'node:util';
 import * as core from '@actions/core';
 import deepmerge from 'deepmerge';
-import * as fs from 'fs';
 import yaml from 'js-yaml';
-import { resolve } from 'path';
-import { inspect } from 'util';
 
 /**
  * Reads configuration from the provided config file path.

@@ -1,11 +1,11 @@
 import * as core from '@actions/core';
 import { context } from '@actions/github';
-import { Octokit } from '@octokit/rest';
-import * as Common from './common';
-import * as dotnet from './dotnet';
-import * as git from './git';
-import { IDotnetFormatConfig, IInputs } from './modals';
-import { readConfig } from './readConfig';
+import type { Octokit } from '@octokit/rest';
+import * as Common from './common.ts';
+import * as dotnet from './dotnet.ts';
+import * as git from './git.ts';
+import type { IDotnetFormatArgs, IDotnetFormatConfig, IInputs } from './modals.ts';
+import { readConfig } from './readConfig.ts';
 
 export async function format(inputs: IInputs, githubClient: InstanceType<typeof Octokit>): Promise<boolean> {
     const configOptions = getOptions(inputs);
@@ -87,19 +87,19 @@ async function execFormat(formatArgs: string[][]): Promise<boolean> {
 }
 
 function getOptions(inputs: IInputs): Partial<IDotnetFormatConfig> {
+    // The enabled flag is intentionally omitted from the defaults so the legacy
+    // `isEabled` key from user configs is not masked; it is resolved afterwards.
     const defaultOptions: Partial<IDotnetFormatConfig> = {
         nugetConfigPath: inputs.nugetConfigPath,
         projectFileName: inputs.projectFileName,
         onlyChangedFiles: inputs.onlyChangedFiles,
         options: {
-            isEabled: true,
             verifyNoChanges: inputs.action === 'check',
             severity: inputs.severityLevel,
             verbosity: inputs.logLevel,
             noRestore: !!inputs.nugetConfigPath
         },
         whitespaceOptions: {
-            isEabled: false,
             verifyNoChanges: inputs.action === 'check',
             folder: true,
             severity: inputs.severityLevel,
@@ -107,14 +107,12 @@ function getOptions(inputs: IInputs): Partial<IDotnetFormatConfig> {
             noRestore: !!inputs.nugetConfigPath
         },
         analyzersOptions: {
-            isEabled: false,
             verifyNoChanges: inputs.action === 'check',
             severity: inputs.severityLevel,
             verbosity: inputs.logLevel,
             noRestore: !!inputs.nugetConfigPath
         },
         styleOptions: {
-            isEabled: false,
             verifyNoChanges: inputs.action === 'check',
             severity: inputs.severityLevel,
             verbosity: inputs.logLevel,
@@ -122,7 +120,18 @@ function getOptions(inputs: IInputs): Partial<IDotnetFormatConfig> {
         }
     };
     const configOptions = readConfig<IDotnetFormatConfig>(defaultOptions, inputs.dotnetFormatConfigPath, inputs.workspace, '.dotnet-format.json');
+    // Simple mode (`options`) is on by default; the granular blocks are off.
+    resolveEnabled(configOptions.options, true);
+    resolveEnabled(configOptions.whitespaceOptions, false);
+    resolveEnabled(configOptions.analyzersOptions, false);
+    resolveEnabled(configOptions.styleOptions, false);
     return configOptions;
+}
+
+function resolveEnabled(block: IDotnetFormatArgs | undefined, defaultValue: boolean): void {
+    if (block) {
+        block.isEnabled = block.isEnabled ?? block.isEabled ?? defaultValue;
+    }
 }
 
 function setOutput(isDryRun: boolean, isFileChanged: boolean): void {
@@ -136,12 +145,14 @@ function setOutput(isDryRun: boolean, isFileChanged: boolean): void {
 }
 
 function checkIsDryRun(config: Partial<IDotnetFormatConfig>): boolean {
-    if (config.options?.isEabled) {
-        return config.options?.verifyNoChanges;
-    } else {
-        const w = (config.whitespaceOptions?.isEabled && config.whitespaceOptions?.verifyNoChanges) || !config.whitespaceOptions?.isEabled;
-        const a = (config.analyzersOptions?.isEabled && config.analyzersOptions?.verifyNoChanges) || !config.analyzersOptions?.isEabled;
-        const s = (config.styleOptions?.isEabled && config.styleOptions?.verifyNoChanges) || !config.styleOptions?.isEabled;
-        return w && a && s;
+    if (dotnet.isEnabledBlock(config.options, false)) {
+        return config.options?.verifyNoChanges ?? false;
     }
+    const wEnabled = dotnet.isEnabledBlock(config.whitespaceOptions, false);
+    const aEnabled = dotnet.isEnabledBlock(config.analyzersOptions, false);
+    const sEnabled = dotnet.isEnabledBlock(config.styleOptions, false);
+    const w = (wEnabled && !!config.whitespaceOptions?.verifyNoChanges) || !wEnabled;
+    const a = (aEnabled && !!config.analyzersOptions?.verifyNoChanges) || !aEnabled;
+    const s = (sEnabled && !!config.styleOptions?.verifyNoChanges) || !sEnabled;
+    return w && a && s;
 }

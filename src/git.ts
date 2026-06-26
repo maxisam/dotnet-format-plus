@@ -1,10 +1,10 @@
+import { extname } from 'node:path';
 import { DefaultArtifactClient } from '@actions/artifact';
 import * as core from '@actions/core';
 import { context } from '@actions/github';
-import { Octokit } from '@octokit/rest';
-import { extname } from 'path';
-import { FileStatus, includedFileTypes } from './const';
-import { execute } from './execute';
+import type { Octokit } from '@octokit/rest';
+import { FileStatus, includedFileTypes } from './const.ts';
+import { execute } from './execute.ts';
 
 export async function getPullRequestFiles(githubClient: InstanceType<typeof Octokit>): Promise<string[]> {
     if (!context.issue.number) {
@@ -45,7 +45,6 @@ export async function init(workspace: string, username: string, email: string): 
 export async function checkIsFileChanged(): Promise<boolean> {
     core.debug('Checking changed files');
     const { stdout, stderr } = await execute('git', process.cwd(), ['status', '-s'], false, false);
-    await execute('git', process.cwd(), ['status', '-s'], false, false);
 
     if (stderr.join('') !== '') {
         core.error(`Errors while checking git status for changed files. Error: ${stderr.join('\n')}`);
