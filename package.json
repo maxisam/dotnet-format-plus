@@ -13,7 +13,7 @@
         "test": "jest --passWithNoTests",
         "test:w": "jest --watchAll",
         "copy-matcher": "cp ./src/problem-matcher.json ./dist/",
-        "all": "npm run build && npm run format && npm run lint && npm run package && npm test && npm run copy-matcher"
+        "all": "pnpm run build && pnpm run format && pnpm run lint && pnpm run package && pnpm test && pnpm run copy-matcher"
     },
     "repository": {
         "type": "git",
@@ -63,5 +63,5 @@
         "ts-jest": "^29.1.1",
         "typescript": "^4.9.5"
     },
-    "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
+    "packageManager": "pnpm@11.9.0"
 }
