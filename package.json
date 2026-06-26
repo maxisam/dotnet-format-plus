@@ -14,7 +14,7 @@
         "test": "node --experimental-transform-types --disable-warning=ExperimentalWarning --test \"__tests__/**/*.test.ts\"",
         "test:w": "node --experimental-transform-types --disable-warning=ExperimentalWarning --watch --test \"__tests__/**/*.test.ts\"",
         "copy-matcher": "node scripts/finalize-dist.mjs",
-        "all": "yarn build && yarn format-check && yarn package && yarn test && yarn copy-matcher"
+        "all": "pnpm run build && pnpm run format-check && pnpm run package && pnpm run test && pnpm run copy-matcher"
     },
     "repository": {
         "type": "git",
@@ -44,5 +44,5 @@
         "@vercel/ncc": "^0.44.0",
         "typescript": "^5.9.3"
     },
-    "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
+    "packageManager": "pnpm@11.9.0"
 }

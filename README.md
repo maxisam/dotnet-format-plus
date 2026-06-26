@@ -57,19 +57,20 @@ This is a TypeScript GitHub Action bundled with [`ncc`](https://github.com/verce
 `dist/`. The toolchain is modern and dependency-light:
 
 -   **Node 24** (ESM, `"type": "module"`)
+-   **[pnpm](https://pnpm.io/)** as the package manager (`packageManager` field; CI uses `pnpm/action-setup`)
 -   **[Biome](https://biomejs.dev/)** for linting + formatting (`biome.json`)
 -   **`node:test`** (Node's built-in runner) for tests — no Jest
 
 ```bash
-yarn install
-yarn build         # tsc --noEmit typecheck
-yarn lint          # biome lint
-yarn test          # node --test
-yarn package       # ncc build -> dist/index.js
-yarn all           # everything CI runs (build, format-check, package, test, finalize dist)
+pnpm install
+pnpm build         # tsc --noEmit typecheck
+pnpm lint          # biome lint
+pnpm test          # node --test
+pnpm package       # ncc build -> dist/index.js
+pnpm all           # everything CI runs (build, format-check, package, test, finalize dist)
 ```
 
-The committed `dist/` must stay in sync with the source — run `yarn all` and commit `dist/`
+The committed `dist/` must stay in sync with the source — run `pnpm all` and commit `dist/`
 before pushing. See [WALKTHROUGH.md](./WALKTHROUGH.md) for the design rationale and migration notes.
 
 ## Acknowledgements

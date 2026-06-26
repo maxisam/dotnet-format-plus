@@ -23,16 +23,19 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
       - name: Set Node.js 24.x
         uses: actions/setup-node@v4
         with:
           node-version: 24.x
-          cache: "yarn"
+          cache: "pnpm"
 
-      - run: yarn install
+      - run: pnpm install
 
       - run: |
-          yarn all
+          pnpm all
 
       - name: Compare the expected and actual dist/ directories
         id: diff

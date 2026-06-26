@@ -61,6 +61,13 @@ ESLint 8 (legacy config) + Prettier were replaced by a single `biome.json`
 mirroring the old Prettier settings (150 width, 4-space, single quotes, no
 trailing commas, arrow parens avoided). Biome also organizes imports.
 
+### Package manager: pnpm
+
+Main migrated from yarn to pnpm (`packageManager: pnpm@11.9.0`) while this branch
+was in flight. That change was merged in: the lockfile is `pnpm-lock.yaml`, the
+`all` script and CI use pnpm (`pnpm/action-setup` + `cache: pnpm`), and main's
+`js-yaml` named-import (`load as yamlLoad`) was adopted.
+
 ### jscpd 5: shell out to the CLI
 
 This was the biggest surprise. jscpd 5 is a **Rust rewrite**: the `jscpd@5` npm
@@ -105,13 +112,13 @@ since .NET 6).
 ## How to test
 
 ```bash
-yarn install
-yarn build          # tsc --noEmit typecheck
-yarn lint           # biome lint
-yarn format-check   # biome check (lint + format)
-yarn test           # node --test (16 tests)
-yarn package        # ncc -> dist/index.js (ESM)
-yarn all            # the full pipeline CI runs
+pnpm install
+pnpm build          # tsc --noEmit typecheck
+pnpm lint           # biome lint
+pnpm format-check   # biome check (lint + format)
+pnpm test           # node --test (16 tests)
+pnpm package        # ncc -> dist/index.js (ESM)
+pnpm all            # the full pipeline CI runs
 ```
 
 Smoke-test the bundle loads as ESM (expect a "missing input" failure, not a

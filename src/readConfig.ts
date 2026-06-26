@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { inspect } from 'node:util';
 import * as core from '@actions/core';
 import deepmerge from 'deepmerge';
-import yaml from 'js-yaml';
+import { load as yamlLoad } from 'js-yaml';
 
 /**
  * Reads configuration from the provided config file path.
@@ -21,7 +21,7 @@ export function readJSONSync<T>(path: string): Partial<T> {
     if (ext === 'json') {
         return JSON.parse(data);
     } else if (ext === 'yaml' || ext === 'yml') {
-        return yaml.load(data) as Partial<T>;
+        return yamlLoad(data) as Partial<T>;
     } else {
         throw new Error(`Unsupported file extension: ${ext}`);
     }
