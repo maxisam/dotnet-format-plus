@@ -411,6 +411,26 @@ runs:
         path: ${{ github.workspace }}/${{ inputs.jscpdReportArtifactName }}
         if-no-files-found: ignore
 
+    - name: "🧹 Clean up jscpd report dir"
+      # Runs after the artifact upload (always, even when the report step failed the
+      # build) so the report dir is not left in the workspace — mirrors the original
+      # io.rmRF(outputDir) and avoids polluting downstream git status / repeat runs.
+      if: ${{ always() && inputs.jscpdCheck == 'true' }}
+      shell: bash
+      env:
+        OUTPUT_DIR: ${{ steps.jscpd-run.outputs.outputDir }}
+        ARTIFACT_NAME: ${{ inputs.jscpdReportArtifactName }}
+      run: |
+        set -uo pipefail
+        DIR="$OUTPUT_DIR"
+        if [ -z "$DIR" ] && [ -n "$ARTIFACT_NAME" ]; then
+          DIR="$GITHUB_WORKSPACE/$ARTIFACT_NAME"
+        fi
+        if [ -n "$DIR" ] && [ "$DIR" != "$GITHUB_WORKSPACE" ] && [ "$DIR" != "/" ]; then
+          echo "Removing jscpd report dir: $DIR"
+          rm -rf "$DIR"
+        fi
+
     # --------------------------------------------------------------------------
     # Fail handling  (Phase 5 — T15)
     # --------------------------------------------------------------------------
