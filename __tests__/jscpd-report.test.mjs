@@ -34,7 +34,8 @@ describe('isOverThreshold', () => {
 
 describe('buildJscpdMessage', () => {
     it('strips the default header, adds links and footer', () => {
-        const md = buildJscpdMessage('# Copy/paste detection report\n\nsome table', duplicates, '/repo/src', '/repo/src', ctx);
+        const header = getReportHeader('/repo/src');
+        const md = buildJscpdMessage('# Copy/paste detection report\n\nsome table', duplicates, header, '/repo/src', ctx);
         assert.match(md, /## ❌ DUPLICATED CODE FOUND - \/repo\/src/);
         assert.doesNotMatch(md, /# Copy\/paste detection report/);
         assert.match(md, /<summary> JSCPD Details <\/summary>/);

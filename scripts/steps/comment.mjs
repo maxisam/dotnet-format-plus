@@ -10,18 +10,19 @@
  * @returns {Promise<number | undefined>}
  */
 export async function getExistingCommentId(github, context, header) {
-    const comments = await github.rest.issues.listComments({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        issue_number: context.issue.number
-    });
-    let userLogin;
-    try {
-        userLogin = (await github.rest.users.getAuthenticated()).data?.login;
-    } catch {
-        // token without user scope; fall back to matching the Bot user type
-        userLogin = undefined;
-    }
+    // The two calls are independent; run them together. getAuthenticated may 403 on a
+    // token without user scope — fall back to matching the Bot user type in that case.
+    const [comments, userLogin] = await Promise.all([
+        github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number
+        }),
+        github.rest.users
+            .getAuthenticated()
+            .then(r => r.data?.login)
+            .catch(() => undefined)
+    ]);
     const existing = comments.data?.find(c => {
         const isBotUserType = c.user?.type === 'Bot' || c.user?.login === userLogin;
         return isBotUserType && c.body?.startsWith(header);

@@ -3,6 +3,7 @@
 // github-script's { github, context, core }; report dir + inputs arrive via env.
 
 import { generateReport, getReportFiles, getReportHeader } from '../dotnet-report.mjs';
+import { buildReportContext } from '../report-common.mjs';
 import { upsertComment } from './comment.mjs';
 
 /**
@@ -21,15 +22,7 @@ export async function run({ github, context, core }) {
     }
 
     const header = getReportHeader(workspace);
-    const reportCtx = {
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        sha: context.sha,
-        cwd: process.cwd(),
-        runId: context.runId,
-        commit: context.payload?.pull_request?.head?.sha || context.sha
-    };
-    const message = generateReport(reportFiles, header, reportCtx);
+    const message = generateReport(reportFiles, header, buildReportContext(context));
     if (!message) {
         return;
     }
