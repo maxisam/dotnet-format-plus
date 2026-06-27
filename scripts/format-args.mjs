@@ -18,14 +18,13 @@ export const FormatType = {
 };
 
 /**
- * Resolve whether a format block is enabled, accepting both the canonical
- * `isEnabled` key and the legacy misspelled `isEabled` key for compatibility.
+ * Resolve whether a format block is enabled via its `isEnabled` key.
  * @param {Record<string, any> | undefined} block
  * @param {boolean} defaultValue
  * @returns {boolean}
  */
 export function isEnabledBlock(block, defaultValue) {
-    return block?.isEnabled ?? block?.isEabled ?? defaultValue;
+    return block?.isEnabled ?? defaultValue;
 }
 
 /**
@@ -34,7 +33,7 @@ export function isEnabledBlock(block, defaultValue) {
  */
 function resolveEnabled(block, defaultValue) {
     if (block) {
-        block.isEnabled = block.isEnabled ?? block.isEabled ?? defaultValue;
+        block.isEnabled = block.isEnabled ?? defaultValue;
     }
 }
 
@@ -115,7 +114,7 @@ export function generateFormatCommandArgs(config, workspace, changedFiles = [], 
 /**
  * Build the default options object derived from the action inputs (ported from
  * getOptions in src/format.ts). The enabled flag is intentionally omitted so a
- * legacy `isEabled` key in user config is not masked; it is resolved afterwards.
+ * user's `isEnabled` is not masked by a default; it is resolved afterwards.
  * @param {Record<string, any>} inputs
  * @returns {Record<string, any>}
  */

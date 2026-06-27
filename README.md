@@ -27,12 +27,13 @@ bundled JavaScript to build or ship.
 -   **jscpd 5** — when `jscpdCheck` is enabled, the action uses a `jscpd`/`cpd` binary found
     on `PATH`, otherwise it fetches it on demand with `npx --yes jscpd@5` (a one-time download).
     To avoid the download, install jscpd on the runner (`npm i -g jscpd`).
--   **YAML config** (`.dotnet-format.yml` / `.jscpd.yml`) is parsed on demand via
-    `npx -y js-yaml`; JSON config needs nothing extra.
+-   **YAML config** (`.dotnet-format.yml` / `.jscpd.yml`) is converted on demand using
+    `yq` if it is on `PATH` (GitHub-hosted runners ship it), otherwise a one-off pinned
+    `npx -y js-yaml@4.1.0`; JSON config needs nothing extra.
 
 > Note on config keys: the granular `options`/`styleOptions`/`analyzersOptions`/`whitespaceOptions`
-> blocks are toggled with `isEnabled`. The historical misspelling `isEabled` is still accepted for
-> backward compatibility.
+> blocks are toggled with `isEnabled`. The legacy misspelled `isEabled` key from older
+> versions is **no longer supported** (breaking change) — use `isEnabled`.
 
 ## Demo
 

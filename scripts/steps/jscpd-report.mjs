@@ -2,7 +2,7 @@
 // build the PR message + job summary, emit annotations, set hasDuplicates, and fail
 // the build when jscpdCheckAsError && over threshold. Ported 1:1 from
 // duplicatedCheck in src/duplicated.ts. Receives github-script's
-// { github, context, core, exec }; scanPath/outputDir + inputs arrive via env.
+// { github, context, core, exec, io }; scanPath/outputDir + inputs arrive via env.
 
 import * as fs from 'node:fs';
 import path from 'node:path';
@@ -15,9 +15,9 @@ const ANNOTATION = { title: 'JSCPD Check' };
 const REPORT_JSON = 'jscpd-report.json';
 
 /**
- * @param {{ github: any, context: any, core: any, exec: any }} ctx
+ * @param {{ github: any, context: any, core: any, exec: any, io: any }} ctx
  */
-export async function run({ github, context, core, exec }) {
+export async function run({ github, context, core, exec, io }) {
     const env = process.env;
     const workspace = env.WORKSPACE || '';
     const scanPath = env.SCAN_PATH || workspace;
@@ -42,7 +42,7 @@ export async function run({ github, context, core, exec }) {
     }
 
     // Threshold: merged from the resolved jscpd config (matches getThreshold).
-    const cfg = await resolveConfig({}, jscpdConfigPath, scanPath, '.jscpd.json', makeLoader(exec));
+    const cfg = await resolveConfig({}, jscpdConfigPath, scanPath, '.jscpd.json', makeLoader(exec, io));
     const threshold = cfg.threshold ?? 0;
 
     const cwd = process.cwd();

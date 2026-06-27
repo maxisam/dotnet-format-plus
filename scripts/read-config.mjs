@@ -3,8 +3,8 @@
 // JSON is parsed natively. YAML support is kept, but the YAML parser is injected
 // (`parseYaml`, e.g. js-yaml's `load`) instead of imported, so this module stays
 // dependency-free at action runtime. The github-script wrapper converts any
-// `.yml`/`.yaml` config to a parsed object (via `npx -y js-yaml`) and the tests
-// inject js-yaml directly.
+// `.yml`/`.yaml` config to a parsed object (via `yq`, or a pinned `npx -y js-yaml`
+// fallback — see steps/load-config.mjs) and the tests inject js-yaml directly.
 
 import * as fs from 'node:fs';
 import { basename, resolve } from 'node:path';
