@@ -49,15 +49,17 @@ export function isOverThreshold(report, threshold) {
 
 /**
  * Build the PR comment / summary message from the jscpd markdown report content
- * and the parsed duplicates. Mirrors the message built in postReport.
+ * and the parsed duplicates. Mirrors the message built in postReport. Takes the
+ * pre-computed `header` (like `generateReport` in dotnet-report.mjs) so the caller
+ * does not compute it twice.
  * @param {string} markdownReportContent  Raw contents of jscpd's markdown report.
  * @param {any[]} duplicates
- * @param {string} workspace
+ * @param {string} header
  * @param {string} scanPath
  * @param {import('./report-common.mjs').ReportContext} ctx
  * @returns {string}
  */
-export function buildJscpdMessage(markdownReportContent, duplicates, workspace, scanPath, ctx) {
+export function buildJscpdMessage(markdownReportContent, duplicates, header, scanPath, ctx) {
     const report = markdownReportContent.replace('# Copy/paste detection report', '');
     let markdown = '<details>\n';
     markdown += ` <summary> JSCPD Details </summary>\n\n`;
@@ -68,7 +70,6 @@ export function buildJscpdMessage(markdownReportContent, duplicates, workspace, 
         markdown += '\n';
     }
     markdown += '</details>\n';
-    const header = getReportHeader(workspace);
     return `${header} \n\n${report}\n\n ${markdown}\n\n ${getReportFooter(ctx)}`;
 }
 

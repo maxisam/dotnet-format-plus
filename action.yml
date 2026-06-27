@@ -213,9 +213,10 @@ runs:
         echo "formatResult=$format_result" >> "$GITHUB_OUTPUT"
 
         # Infrastructure/runner failures fail unconditionally; formatting findings
-        # remain gated by the failFast step.
+        # remain gated by the failFast step. The per-command ::error:: above already
+        # annotated the failure, so just exit here.
         if [ "$exec_failed" = "true" ]; then
-          echo "::error title=DOTNET FORMAT Check::dotnet format failed to execute"
+          echo "dotnet format failed to execute (see error above)"
           exit 1
         fi
 
@@ -311,11 +312,12 @@ runs:
         attempt=1
         while [ "$attempt" -le 3 ]; do
           echo "Pushing changes… (attempt $attempt of 3)"
+          ERR_LOG="$RUNNER_TEMP/df-push-err.log"
           set +e
-          push_out=$(git push --porcelain origin "$BRANCH:$BRANCH" 2>push_err.log)
+          push_out=$(git push --porcelain origin "$BRANCH:$BRANCH" 2>"$ERR_LOG")
           set -e
-          push_err=$(cat push_err.log 2>/dev/null || true)
-          rm -f push_err.log
+          push_err=$(cat "$ERR_LOG" 2>/dev/null || true)
+          rm -f "$ERR_LOG"
           if printf '%s' "$push_out" | grep -qE '\[rejected\]|\[remote rejected\]'; then
             echo "Updates were rejected; fetching and rebasing onto $BRANCH"
             git fetch

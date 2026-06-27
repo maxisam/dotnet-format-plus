@@ -10,7 +10,7 @@ import process from 'node:process';
 /** Mirrors REPORT_PATH from src/common.ts (computed from cwd at load time). */
 export const DEFAULT_REPORT_DIR = `${process.cwd()}/.dotnet-format`;
 
-export const FormatType = {
+const FormatType = {
     all: 'all',
     style: 'style',
     analyzers: 'analyzers',
@@ -46,7 +46,7 @@ function resolveEnabled(block, defaultValue) {
  * @param {string} type
  * @returns {string[]}
  */
-export function buildArgs(options, onlyChangedFiles, changedFiles, type) {
+function buildArgs(options, onlyChangedFiles, changedFiles, type) {
     /** @type {string[]} */
     const args = [];
     if (options.verifyNoChanges) {
@@ -120,37 +120,22 @@ export function generateFormatCommandArgs(config, workspace, changedFiles = [], 
  * @returns {Record<string, any>}
  */
 export function buildDefaultOptions(inputs) {
-    const verifyNoChanges = inputs.action === 'check';
+    // Shared per-block defaults; the blocks differ only in the two overrides below.
+    const base = {
+        verifyNoChanges: inputs.action === 'check',
+        severity: inputs.severityLevel,
+        verbosity: inputs.logLevel,
+        noRestore: !!inputs.nugetConfigPath
+    };
     return {
         nugetConfigPath: inputs.nugetConfigPath,
         projectFileName: inputs.projectFileName,
         onlyChangedFiles: inputs.onlyChangedFiles,
-        options: {
-            verifyNoChanges,
-            severity: inputs.severityLevel,
-            verbosity: inputs.logLevel,
-            noRestore: !!inputs.nugetConfigPath
-        },
-        whitespaceOptions: {
-            verifyNoChanges,
-            folder: true,
-            severity: inputs.severityLevel,
-            verbosity: inputs.logLevel,
-            noRestore: !!inputs.nugetConfigPath
-        },
-        analyzersOptions: {
-            verifyNoChanges,
-            severity: inputs.severityLevel,
-            verbosity: inputs.logLevel,
-            noRestore: !!inputs.nugetConfigPath
-        },
-        styleOptions: {
-            verifyNoChanges,
-            severity: inputs.severityLevel,
-            verbosity: inputs.logLevel,
-            // Quirk preserved from the original: style uses dotnetFormatConfigPath here.
-            noRestore: !!inputs.dotnetFormatConfigPath
-        }
+        options: { ...base },
+        whitespaceOptions: { ...base, folder: true },
+        analyzersOptions: { ...base },
+        // Quirk preserved from the original: style keys noRestore off dotnetFormatConfigPath.
+        styleOptions: { ...base, noRestore: !!inputs.dotnetFormatConfigPath }
     };
 }
 
@@ -178,25 +163,22 @@ export function checkIsDryRun(config) {
     if (isEnabledBlock(config.options, false)) {
         return config.options?.verifyNoChanges ?? false;
     }
-    const wEnabled = isEnabledBlock(config.whitespaceOptions, false);
-    const aEnabled = isEnabledBlock(config.analyzersOptions, false);
-    const sEnabled = isEnabledBlock(config.styleOptions, false);
-    const w = (wEnabled && !!config.whitespaceOptions?.verifyNoChanges) || !wEnabled;
-    const a = (aEnabled && !!config.analyzersOptions?.verifyNoChanges) || !aEnabled;
-    const s = (sEnabled && !!config.styleOptions?.verifyNoChanges) || !sEnabled;
-    return w && a && s;
+    // A granular block is "dry" when it is disabled, or enabled and verifying no
+    // changes — i.e. `(enabled && verify) || !enabled` simplifies to `!enabled || verify`.
+    const dry = block => !isEnabledBlock(block, false) || !!block?.verifyNoChanges;
+    return dry(config.whitespaceOptions) && dry(config.analyzersOptions) && dry(config.styleOptions);
 }
 
 /**
  * Convenience: finalize a merged config and emit everything the runner needs.
  * @param {Record<string, any>} mergedConfig
  * @param {{ workspace: string, changedFiles?: string[], isOnlyChangedFiles?: boolean, reportDir?: string }} opts
- * @returns {{ config: Record<string, any>, commands: string[][], isDryRun: boolean }}
+ * @returns {{ commands: string[][], isDryRun: boolean }}
  */
 export function planFormat(mergedConfig, opts) {
     const { workspace, changedFiles = [], isOnlyChangedFiles = false, reportDir = DEFAULT_REPORT_DIR } = opts;
     const config = finalizeEnabled(mergedConfig);
     const commands = generateFormatCommandArgs(config, workspace, changedFiles, { isOnlyChangedFiles, reportDir });
     const isDryRun = checkIsDryRun(config);
-    return { config, commands, isDryRun };
+    return { commands, isDryRun };
 }
