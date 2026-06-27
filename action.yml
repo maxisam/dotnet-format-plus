@@ -157,7 +157,7 @@ runs:
           const { pathToFileURL } = require('node:url');
           const url = pathToFileURL(`${process.env.GITHUB_ACTION_PATH}/scripts/steps/resolve-config.mjs`).href;
           const { run } = await import(url);
-          await run({ github, context, core, exec });
+          await run({ github, context, core, exec, io });
 
     - name: "🏃 Run dotnet format"
       id: dotnet-format
@@ -401,7 +401,7 @@ runs:
           const { pathToFileURL } = require('node:url');
           const url = pathToFileURL(`${process.env.GITHUB_ACTION_PATH}/scripts/steps/jscpd-report.mjs`).href;
           const { run } = await import(url);
-          await run({ github, context, core, exec });
+          await run({ github, context, core, exec, io });
 
     - name: "📦 Upload jscpd report"
       if: ${{ always() && inputs.jscpdCheck == 'true' }}

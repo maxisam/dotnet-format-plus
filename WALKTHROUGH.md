@@ -75,11 +75,12 @@ Config precedence is:
 3. same config filename inside `workspace`
 
 Arrays are concatenated and de-duplicated while preserving first occurrence order.
-JSON config is parsed directly. YAML config is loaded on demand by calling
-`npx -y js-yaml`, which keeps the action runtime dependency-free.
+JSON config is parsed directly. YAML config is converted on demand by `yq` when it is
+on `PATH` (GitHub-hosted runners ship it), otherwise a pinned `npx -y js-yaml@4.1.0`
+fallback — which keeps the action runtime dependency-free.
 
-The documented `isEnabled` key and historical misspelling `isEabled` are both
-accepted. `isEnabled` wins when both are present.
+Format blocks are toggled with the `isEnabled` key. The legacy misspelled `isEabled`
+key from older versions is no longer supported (breaking change).
 
 ## Repository Layout
 

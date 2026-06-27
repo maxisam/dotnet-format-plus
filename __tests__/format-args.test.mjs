@@ -11,10 +11,9 @@ import {
 } from '../scripts/format-args.mjs';
 
 describe('isEnabledBlock', () => {
-    it('prefers isEnabled, falls back to legacy isEabled, then default', () => {
+    it('reads isEnabled, otherwise the default', () => {
         assert.equal(isEnabledBlock({ isEnabled: true }, false), true);
-        assert.equal(isEnabledBlock({ isEabled: true }, false), true);
-        assert.equal(isEnabledBlock({ isEnabled: false, isEabled: true }, true), false);
+        assert.equal(isEnabledBlock({ isEnabled: false }, true), false);
         assert.equal(isEnabledBlock(undefined, true), true);
         assert.equal(isEnabledBlock({}, false), false);
     });
@@ -103,18 +102,6 @@ describe('generateFormatCommandArgs', () => {
                 `${DEFAULT_REPORT_DIR}/style-format.json`
             ]
         ]);
-    });
-
-    it('treats the legacy isEabled key as enabled (backward compatibility)', () => {
-        const config = {
-            projectFileName: 'test.csproj',
-            onlyChangedFiles: false,
-            options: { isEabled: true, verbosity: 'normal', noRestore: true, severity: 'error', verifyNoChanges: true }
-        };
-        const result = generateFormatCommandArgs(config, '/path/to/workspace', []);
-        assert.equal(result.length, 1);
-        assert.equal(result[0][0], 'format');
-        assert.equal(result[0][1], '/path/to/workspace/test.csproj');
     });
 
     it('prepends changed files to --include when onlyChangedFiles is active', () => {

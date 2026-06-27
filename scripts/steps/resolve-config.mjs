@@ -1,7 +1,7 @@
 // github-script wrapper (Phase 3, T6+T7): resolve the dotnet format config, fold in
 // the PR changed-files lookup, and write the normalized run plan to
 // $RUNNER_TEMP/df-config.json for the shell runner. Receives github-script's
-// { github, context, core, exec }; all action inputs arrive via env (composite
+// { github, context, core, exec, io }; all action inputs arrive via env (composite
 // actions don't expose inputs to core.getInput).
 
 import * as fs from 'node:fs';
@@ -15,9 +15,9 @@ const INCLUDED_FILE_TYPES = ['.cs', '.vb', '.cspoj', '.vbproj', '.fs', '.fsproj'
 const ANNOTATION = { title: 'DOTNET FORMAT Check' };
 
 /**
- * @param {{ github: any, context: any, core: any, exec: any }} ctx
+ * @param {{ github: any, context: any, core: any, exec: any, io: any }} ctx
  */
-export async function run({ github, context, core, exec }) {
+export async function run({ github, context, core, exec, io }) {
     const env = process.env;
     const inputs = {
         action: env.ACTION,
@@ -30,7 +30,7 @@ export async function run({ github, context, core, exec }) {
         workspace: env.WORKSPACE || ''
     };
 
-    const loadObject = makeLoader(exec);
+    const loadObject = makeLoader(exec, io);
     const defaults = buildDefaultOptions(inputs);
     const merged = await resolveConfig(defaults, inputs.dotnetFormatConfigPath, inputs.workspace, '.dotnet-format.json', loadObject);
 
