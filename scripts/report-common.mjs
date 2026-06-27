@@ -13,6 +13,24 @@
  */
 
 /**
+ * Build the {@link ReportContext} from github-script's `context` (owner/repo/sha +
+ * the PR-head-or-sha commit to credit). Shared by the dotnet format and jscpd report
+ * steps so the context shape lives in one place.
+ * @param {any} context
+ * @returns {ReportContext}
+ */
+export function buildReportContext(context) {
+    return {
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        sha: context.sha,
+        cwd: process.cwd(),
+        runId: context.runId,
+        commit: context.payload?.pull_request?.head?.sha || context.sha
+    };
+}
+
+/**
  * @param {ReportContext} ctx
  * @returns {string}
  */

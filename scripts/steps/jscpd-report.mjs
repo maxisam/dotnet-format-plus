@@ -8,6 +8,7 @@ import * as fs from 'node:fs';
 import path from 'node:path';
 import { buildAnnotations, buildJscpdMessage, getReportHeader, isOverThreshold } from '../jscpd-report.mjs';
 import { resolveConfig } from '../read-config.mjs';
+import { buildReportContext } from '../report-common.mjs';
 import { upsertComment } from './comment.mjs';
 import { makeLoader } from './load-config.mjs';
 
@@ -46,21 +47,14 @@ export async function run({ github, context, core, exec, io }) {
     const threshold = cfg.threshold ?? 0;
 
     const cwd = process.cwd();
-    const reportCtx = {
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        sha: context.sha,
-        cwd,
-        runId: context.runId,
-        commit: context.payload?.pull_request?.head?.sha || context.sha
-    };
+    const reportCtx = buildReportContext(context);
     const header = getReportHeader(workspace);
 
     // Build the message from jscpd's markdown report, post it, and overwrite the
     // markdown file with the full message (so the uploaded artifact matches).
     const mdFile = findByExt(outputDir, '.md');
     const mdContent = mdFile ? fs.readFileSync(mdFile, 'utf8') : '';
-    const message = buildJscpdMessage(mdContent, duplicates, workspace, scanPath, reportCtx);
+    const message = buildJscpdMessage(mdContent, duplicates, header, scanPath, reportCtx);
     if (mdFile) {
         fs.writeFileSync(mdFile, message);
     }
